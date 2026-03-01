@@ -1,0 +1,65 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { useHistoryStore } from '../../../src/renderer/state/history-store';
+
+describe('useHistoryStore', () => {
+  beforeEach(() => {
+    useHistoryStore.getState().reset();
+  });
+
+  it('initializes with empty state', () => {
+    const state = useHistoryStore.getState();
+    expect(state.workspaces).toEqual([]);
+    expect(state.sessions).toEqual([]);
+    expect(state.selectedWorkspaceId).toBeNull();
+    expect(state.isLoadingWorkspaces).toBe(false);
+    expect(state.isLoadingSessions).toBe(false);
+  });
+
+  it('sets workspaces', () => {
+    const workspaces = [{ workspaceId: 'ws-1' }, { workspaceId: 'ws-2' }];
+    useHistoryStore.getState().setWorkspaces(workspaces as never);
+
+    expect(useHistoryStore.getState().workspaces).toEqual(workspaces);
+  });
+
+  it('sets sessions', () => {
+    const sessions = [{ sessionId: 'ss-1' }];
+    useHistoryStore.getState().setSessions(sessions as never);
+
+    expect(useHistoryStore.getState().sessions).toEqual(sessions);
+  });
+
+  it('clears sessions when selecting a new workspace', () => {
+    useHistoryStore.getState().setSessions([{ sessionId: 'ss-1' }] as never);
+    useHistoryStore.getState().setSelectedWorkspaceId('ws-2');
+
+    expect(useHistoryStore.getState().sessions).toEqual([]);
+    expect(useHistoryStore.getState().selectedWorkspaceId).toBe('ws-2');
+  });
+
+  it('sets loading flags', () => {
+    useHistoryStore.getState().setLoadingWorkspaces(true);
+    expect(useHistoryStore.getState().isLoadingWorkspaces).toBe(true);
+
+    useHistoryStore.getState().setLoadingSessions(true);
+    expect(useHistoryStore.getState().isLoadingSessions).toBe(true);
+  });
+
+  it('sets error', () => {
+    useHistoryStore.getState().setError('Something went wrong');
+    expect(useHistoryStore.getState().error).toBe('Something went wrong');
+  });
+
+  it('resets all state', () => {
+    useHistoryStore.getState().setWorkspaces([{ workspaceId: 'ws-1' }] as never);
+    useHistoryStore.getState().setSelectedWorkspaceId('ws-1');
+    useHistoryStore.getState().setError('err');
+
+    useHistoryStore.getState().reset();
+
+    const state = useHistoryStore.getState();
+    expect(state.workspaces).toEqual([]);
+    expect(state.selectedWorkspaceId).toBeNull();
+    expect(state.error).toBeNull();
+  });
+});
