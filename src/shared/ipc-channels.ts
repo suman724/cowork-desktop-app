@@ -29,6 +29,10 @@ export const IPC_CHANNELS = {
   // Agent runtime control
   RUNTIME_STATUS: 'runtime:status',
   RUNTIME_SHUTDOWN: 'runtime:shutdown',
+  RUNTIME_OPEN_LOG_FOLDER: 'runtime:open-log-folder',
+
+  // Folder picker
+  FOLDER_SELECT: 'folder:select',
 
   // App lifecycle
   APP_GET_VERSION: 'app:get-version',

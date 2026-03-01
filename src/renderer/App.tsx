@@ -1,8 +1,9 @@
 import { ThemeProvider } from './components/ThemeProvider';
 import { AppLayout } from './components/AppLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Sidebar } from './components/Sidebar';
 import { ConversationView } from './views/conversation/ConversationView';
-import { HistoryView } from './views/history/HistoryView';
+import { HomeView } from './views/home/HomeView';
 import { PatchPreviewView } from './views/patch/PatchPreviewView';
 import { SettingsView } from './views/settings/SettingsView';
 import { ApprovalDialog } from './views/approval/ApprovalDialog';
@@ -21,15 +22,20 @@ export function App(): React.JSX.Element {
   return (
     <ThemeProvider>
       <AppLayout>
-        <ErrorBoundary>
-          {view === 'history' && <HistoryView />}
-          {view === 'conversation' && <ConversationView />}
-          {view === 'patch' && <PatchPreviewView patch={patchPreview} />}
-          {view === 'settings' && <SettingsView />}
+        <div className="flex h-full">
+          <Sidebar />
+          <main className="flex-1 overflow-hidden">
+            <ErrorBoundary>
+              {view === 'home' && <HomeView />}
+              {view === 'conversation' && <ConversationView />}
+              {view === 'patch' && <PatchPreviewView patch={patchPreview} />}
+              {view === 'settings' && <SettingsView />}
+            </ErrorBoundary>
+          </main>
+        </div>
 
-          {/* Approval dialog renders on top of any view */}
-          <ApprovalDialog />
-        </ErrorBoundary>
+        {/* Approval dialog renders on top of any view */}
+        <ApprovalDialog />
       </AppLayout>
     </ThemeProvider>
   );

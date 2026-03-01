@@ -11,6 +11,12 @@ vi.mock('electron', () => ({
   app: {
     getVersion: (): string => '1.0.0-test',
   },
+  shell: {
+    openPath: vi.fn().mockResolvedValue(''),
+  },
+  dialog: {
+    showOpenDialog: vi.fn().mockResolvedValue({ canceled: false, filePaths: ['/tmp/folder'] }),
+  },
 }));
 
 // Mock os

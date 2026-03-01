@@ -7,6 +7,7 @@ export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed';
 export interface SessionState {
   sessionId: string;
   workspaceId: string;
+  logDir?: string;
   status: string;
 }
 
@@ -56,7 +57,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 /** All navigable views */
-export type ViewName = 'history' | 'conversation' | 'patch' | 'settings';
+export type ViewName = 'home' | 'conversation' | 'patch' | 'settings';
 
 /** Wrapper for IPC results — never throws across the bridge */
 export type IpcResponse<T> =

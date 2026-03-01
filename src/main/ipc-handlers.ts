@@ -1,4 +1,4 @@
-import { ipcMain, app } from 'electron';
+import { ipcMain, app, shell, dialog } from 'electron';
 import * as os from 'node:os';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { IpcResponse, AppSettings } from '../shared/types';
@@ -267,6 +267,33 @@ export function registerIpcHandlers(
       return success(undefined);
     } catch (err) {
       return failure('SHUTDOWN_FAILED', err instanceof Error ? err.message : 'Shutdown failed');
+    }
+  });
+
+  // --- Log folder ---
+  ipcMain.handle(IPC_CHANNELS.RUNTIME_OPEN_LOG_FOLDER, async (_event, logDir: string) => {
+    try {
+      await shell.openPath(logDir);
+      return success(undefined);
+    } catch (err) {
+      return failure(
+        'OPEN_FOLDER_FAILED',
+        err instanceof Error ? err.message : 'Failed to open log folder',
+      );
+    }
+  });
+
+  // --- Folder picker ---
+  ipcMain.handle(IPC_CHANNELS.FOLDER_SELECT, async () => {
+    try {
+      const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+      if (result.canceled || result.filePaths.length === 0) return success(null);
+      return success(result.filePaths[0]);
+    } catch (err) {
+      return failure(
+        'FOLDER_SELECT_FAILED',
+        err instanceof Error ? err.message : 'Failed to open folder picker',
+      );
     }
   });
 
