@@ -106,6 +106,20 @@ export class WorkspaceServiceClient {
       }
     }
 
+    // Provide a friendlier message for connection errors
+    if (lastError?.message === 'fetch failed' || lastError?.cause) {
+      const cause = lastError.cause;
+      if (
+        cause instanceof Error &&
+        'code' in cause &&
+        (cause as Error & { code: string }).code === 'ECONNREFUSED'
+      ) {
+        throw new Error(
+          `Cannot connect to Workspace Service at ${this.config.baseUrl}. Is it running?`,
+        );
+      }
+    }
+
     throw lastError ?? new Error('All retries exhausted');
   }
 }
