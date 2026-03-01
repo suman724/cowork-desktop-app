@@ -7,6 +7,29 @@ interface WorkspaceItemProps {
   onClick: () => void;
 }
 
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
+function getDisplayName(workspace: Workspace): string {
+  if (workspace.localPath) {
+    // Show last path component for local workspaces
+    const parts = workspace.localPath.split('/').filter(Boolean);
+    return parts[parts.length - 1] ?? workspace.localPath;
+  }
+  // For general workspaces, show date-based name
+  return `Chat ${formatDate(workspace.createdAt)}`;
+}
+
 export function WorkspaceItem({
   workspace,
   isSelected,
@@ -20,9 +43,11 @@ export function WorkspaceItem({
         isSelected && 'bg-accent',
       )}
     >
-      <div className="font-medium">{workspace.localPath ?? workspace.workspaceId}</div>
+      <div className="truncate font-medium">{getDisplayName(workspace)}</div>
       <div className="text-muted-foreground text-xs">
-        {workspace.workspaceScope} &middot; {workspace.workspaceId.slice(0, 8)}
+        {workspace.workspaceScope === 'local'
+          ? workspace.localPath
+          : formatDate(workspace.lastActiveAt)}
       </div>
     </button>
   );

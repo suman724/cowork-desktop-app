@@ -30,9 +30,11 @@ export function ConversationView(): React.JSX.Element {
 
   const handleNewSession = useCallback(() => {
     const settings = useUIStore.getState().settings;
+    const workspacePath = useSessionStore.getState().workspacePath;
     void createSession({
       tenantId: settings.tenantId ?? 'dev-tenant',
       userId: settings.userId ?? 'dev-user',
+      workspaceHint: workspacePath ? { localPaths: [workspacePath] } : undefined,
     });
   }, [createSession]);
 

@@ -28,7 +28,7 @@ export function usePatchPreview(): UsePatchPreview {
 
     try {
       const result = await window.coworkIPC.getPatchPreview({
-        sessionId: sessionState.session.sessionId,
+        sessionId: sessionState.sessionId,
         taskId: taskState.taskId,
       });
 

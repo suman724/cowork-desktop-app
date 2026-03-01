@@ -18,12 +18,12 @@ describe('useSessionStore', () => {
 
   it('sets session state', () => {
     const session = {
-      session: { sessionId: 's-1', workspaceId: 'ws-1' },
-      policyBundle: { policyBundleVersion: '1' },
+      sessionId: 's-1',
       workspaceId: 'ws-1',
+      status: 'ready',
     };
 
-    useSessionStore.getState().setSessionState(session as never);
+    useSessionStore.getState().setSessionState(session);
     expect(useSessionStore.getState().sessionState).toEqual(session);
   });
 
@@ -80,7 +80,9 @@ describe('useSessionStore', () => {
   });
 
   it('resets session and task state', () => {
-    useSessionStore.getState().setSessionState({ session: {} } as never);
+    useSessionStore
+      .getState()
+      .setSessionState({ sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' });
     useSessionStore.getState().setTaskState({ taskId: 't-1' } as never);
 
     useSessionStore.getState().reset();

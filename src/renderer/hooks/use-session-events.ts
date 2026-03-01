@@ -165,7 +165,6 @@ export function useSessionEvents(): void {
         case EVENT_TYPE.SESSION_COMPLETED: {
           finishStreaming();
           setTaskRunning(false);
-          addSystemMessage('Session completed.');
           break;
         }
 

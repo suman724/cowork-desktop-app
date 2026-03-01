@@ -1,19 +1,13 @@
-import type {
-  ApprovalRequest,
-  ConversationMessage,
-  PolicyBundle,
-  Session,
-  Workspace,
-} from '@cowork/platform';
+import type { ApprovalRequest, ConversationMessage, Workspace } from '@cowork/platform';
 
 /** Agent runtime process status */
 export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed';
 
-/** Session state as seen by the desktop app */
+/** Session state as seen by the desktop app (matches CreateSession JSON-RPC response) */
 export interface SessionState {
-  session: Session;
-  policyBundle: PolicyBundle;
+  sessionId: string;
   workspaceId: string;
+  status: string;
 }
 
 /** Task execution state */
@@ -119,4 +113,4 @@ export interface ListSessionsResponse {
   nextToken?: string;
 }
 
-export type { ApprovalRequest, ConversationMessage, PolicyBundle, Session, Workspace };
+export type { ApprovalRequest, ConversationMessage, Workspace };

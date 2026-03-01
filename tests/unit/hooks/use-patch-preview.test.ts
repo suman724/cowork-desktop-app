@@ -17,10 +17,10 @@ describe('usePatchPreview', () => {
     vi.clearAllMocks();
     useSessionStore.getState().reset();
     useSessionStore.getState().setSessionState({
-      session: { sessionId: 's-1' },
-      policyBundle: {},
+      sessionId: 's-1',
       workspaceId: 'ws-1',
-    } as never);
+      status: 'ready',
+    });
     useSessionStore.getState().setTaskState({
       taskId: 't-1',
       sessionId: 's-1',
