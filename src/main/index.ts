@@ -32,6 +32,9 @@ function createWindow(): BrowserWindow {
 
   if (process.env['ELECTRON_RENDERER_URL']) {
     void win.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    if (!app.isPackaged) {
+      win.webContents.openDevTools();
+    }
   } else {
     void win.loadFile(join(__dirname, '../renderer/index.html'));
   }
