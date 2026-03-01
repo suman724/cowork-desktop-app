@@ -199,9 +199,7 @@ export class AgentRuntimeManager {
   private attemptAutoRestart(): void {
     const now = Date.now();
     // Clean timestamps older than the crash window
-    this.restartTimestamps = this.restartTimestamps.filter(
-      (ts) => now - ts < CRASH_WINDOW_MS,
-    );
+    this.restartTimestamps = this.restartTimestamps.filter((ts) => now - ts < CRASH_WINDOW_MS);
 
     if (this.restartTimestamps.length >= MAX_RESTART_ATTEMPTS) {
       // Crash loop detected — stay crashed
