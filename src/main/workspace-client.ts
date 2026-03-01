@@ -1,4 +1,9 @@
-import type { Workspace, SessionSummary, ConversationMessage } from '../shared/types';
+import type {
+  Workspace,
+  SessionSummary,
+  ListSessionsResponse,
+  ConversationMessage,
+} from '../shared/types';
 
 interface WorkspaceServiceConfig {
   baseUrl: string;
@@ -39,8 +44,9 @@ export class WorkspaceServiceClient {
    * List sessions for a workspace.
    */
   async listSessions(workspaceId: string): Promise<SessionSummary[]> {
-    const url = `${this.config.baseUrl}/workspaces/${encodeURIComponent(workspaceId)}/sessions`;
-    return this.fetchWithRetry<SessionSummary[]>(url);
+    const url = `${this.config.baseUrl}/workspaces/${encodeURIComponent(workspaceId)}/sessions?limit=100`;
+    const response = await this.fetchWithRetry<ListSessionsResponse>(url);
+    return response.sessions;
   }
 
   /**
@@ -67,7 +73,9 @@ export class WorkspaceServiceClient {
 
           if (!response.ok) {
             const body = await response.text().catch(() => '');
-            throw new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);
+            const err = new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);
+            (err as Error & { statusCode: number }).statusCode = response.status;
+            throw err;
           }
 
           return (await response.json()) as T;
@@ -78,14 +86,16 @@ export class WorkspaceServiceClient {
         lastError = err instanceof Error ? err : new Error(String(err));
 
         // Don't retry on client errors (4xx)
-        if (lastError.message.startsWith('HTTP 4')) {
+        const statusCode = (lastError as Error & { statusCode?: number }).statusCode;
+        if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
           throw lastError;
         }
 
-        // Exponential backoff: 500ms, 1000ms, 2000ms...
+        // Exponential backoff with jitter
         if (attempt < this.config.maxRetries - 1) {
-          const delay = 500 * Math.pow(2, attempt);
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          const baseDelay = 500 * Math.pow(2, attempt);
+          const jitter = Math.random() * baseDelay * 0.5;
+          await new Promise((resolve) => setTimeout(resolve, baseDelay + jitter));
         }
       }
     }

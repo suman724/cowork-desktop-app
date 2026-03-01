@@ -1,6 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS, IPC_EVENTS } from '../shared/ipc-channels';
-import type { IpcResponse, SessionEvent, AgentRuntimeStatus, AppSettings } from '../shared/types';
+import type {
+  IpcResponse,
+  SessionEvent,
+  SessionState,
+  AgentRuntimeStatus,
+  AppSettings,
+  PatchPreview,
+  SessionSummary,
+  ConversationMessage,
+} from '../shared/types';
+import type { Workspace } from '@cowork/platform';
 
 /**
  * Preload script — the sole bridge between main and renderer processes.
@@ -13,40 +23,50 @@ export interface CoworkIPC {
   createSession: (params: {
     tenantId: string;
     userId: string;
-    workspaceHint?: { scope: string; localPath?: string };
-  }) => Promise<IpcResponse<unknown>>;
+    workspaceHint?: { localPaths?: string[] };
+  }) => Promise<IpcResponse<SessionState>>;
 
-  getSessionState: (params: { sessionId: string }) => Promise<IpcResponse<unknown>>;
+  getSessionState: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
 
   // Task control
   startTask: (params: {
     sessionId: string;
     taskId: string;
     prompt: string;
-    maxSteps?: number;
-  }) => Promise<IpcResponse<unknown>>;
+    taskOptions?: {
+      maxSteps?: number;
+      allowNetwork?: boolean;
+      approvalMode?: 'always' | 'on_risky_actions' | 'never';
+    };
+  }) => Promise<IpcResponse<void>>;
 
-  cancelTask: (params: { sessionId: string; taskId: string }) => Promise<IpcResponse<unknown>>;
+  cancelTask: (params: { sessionId: string; taskId: string }) => Promise<IpcResponse<void>>;
 
   // Approval
   resolveApproval: (params: {
     approvalId: string;
     decision: 'approved' | 'denied';
     reason?: string;
-  }) => Promise<IpcResponse<unknown>>;
+  }) => Promise<IpcResponse<void>>;
 
   // Patch preview
-  getPatchPreview: (params: { sessionId: string; taskId: string }) => Promise<IpcResponse<unknown>>;
+  getPatchPreview: (params: {
+    sessionId: string;
+    taskId: string;
+  }) => Promise<IpcResponse<PatchPreview>>;
 
   // Workspace Service (history)
-  listWorkspaces: (params: { tenantId: string; userId: string }) => Promise<IpcResponse<unknown>>;
+  listWorkspaces: (params: {
+    tenantId: string;
+    userId: string;
+  }) => Promise<IpcResponse<Workspace[]>>;
 
-  listSessions: (params: { workspaceId: string }) => Promise<IpcResponse<unknown>>;
+  listSessions: (params: { workspaceId: string }) => Promise<IpcResponse<SessionSummary[]>>;
 
   getSessionHistory: (params: {
     workspaceId: string;
     sessionId: string;
-  }) => Promise<IpcResponse<unknown>>;
+  }) => Promise<IpcResponse<ConversationMessage[]>>;
 
   // Settings
   getSettings: () => Promise<IpcResponse<AppSettings>>;

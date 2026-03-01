@@ -15,6 +15,8 @@ const EVENT_TYPE = {
   SESSION_COMPLETED: 'session_completed',
   SESSION_FAILED: 'session_failed',
   POLICY_EXPIRED: 'policy_expired',
+  TASK_COMPLETED: 'task_completed',
+  TASK_FAILED: 'task_failed',
 } as const;
 import { useMessagesStore } from '../state/messages-store';
 import { useSessionStore } from '../state/session-store';
@@ -118,8 +120,25 @@ export function useSessionEvents(): void {
         }
 
         case EVENT_TYPE.POLICY_EXPIRED: {
+          finishStreaming();
+          setTaskRunning(false);
           setError('Policy expired. Please start a new session.');
           addSystemMessage('Policy expired. Please start a new session.');
+          break;
+        }
+
+        case EVENT_TYPE.TASK_COMPLETED: {
+          finishStreaming();
+          setTaskRunning(false);
+          break;
+        }
+
+        case EVENT_TYPE.TASK_FAILED: {
+          finishStreaming();
+          setTaskRunning(false);
+          const message = (event.payload as { message?: string }).message ?? 'Task failed';
+          setError(message);
+          addSystemMessage(`Error: ${message}`);
           break;
         }
 

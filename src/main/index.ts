@@ -59,6 +59,19 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('before-quit', () => {
-  void runtimeManager.shutdown();
+let isQuitting = false;
+app.on('before-quit', (event) => {
+  if (!isQuitting) {
+    isQuitting = true;
+    event.preventDefault();
+    void runtimeManager.shutdown().finally(() => app.quit());
+  }
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Main] Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Main] Unhandled rejection:', reason);
 });

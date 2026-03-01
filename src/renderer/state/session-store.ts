@@ -34,5 +34,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
     })),
   setAgentRuntimeStatus: (agentRuntimeStatus) => set({ agentRuntimeStatus }),
   setError: (error) => set({ error }),
-  reset: () => set({ sessionState: null, taskState: null, error: null }),
+  reset: () =>
+    set({ sessionState: null, taskState: null, agentRuntimeStatus: 'stopped', error: null }),
 }));

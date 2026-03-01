@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import type { IpcResponse } from '../../shared/types';
+// IPC types are inferred from window.coworkIPC
 import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
+import { useUIStore } from '../state/ui-store';
 
 interface UseStartTask {
   startTask: (prompt: string) => Promise<void>;
@@ -12,21 +13,24 @@ interface UseStartTask {
 export function useStartTask(): UseStartTask {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const sessionState = useSessionStore((s) => s.sessionState);
   const setTaskState = useSessionStore((s) => s.setTaskState);
   const addUserMessage = useMessagesStore((s) => s.addUserMessage);
 
   const startTask = useCallback(
     async (prompt: string) => {
+      const sessionState = useSessionStore.getState().sessionState;
       if (!sessionState) {
         setError('No active session');
         return;
       }
 
+      if (isLoading) return;
+
       setIsLoading(true);
       setError(null);
 
       const taskId = `task-${Date.now()}`;
+      const settings = useUIStore.getState().settings;
       addUserMessage(prompt);
 
       setTaskState({
@@ -34,25 +38,36 @@ export function useStartTask(): UseStartTask {
         sessionId: sessionState.session.sessionId,
         prompt,
         currentStep: 0,
-        maxSteps: sessionState.policyBundle.llmPolicy.maxOutputTokens,
+        maxSteps: settings.maxStepsPerTask,
         isRunning: true,
       });
 
-      const result: IpcResponse<unknown> = await window.coworkIPC.startTask({
-        sessionId: sessionState.session.sessionId,
-        taskId,
-        prompt,
-      });
+      try {
+        const result = await window.coworkIPC.startTask({
+          sessionId: sessionState.session.sessionId,
+          taskId,
+          prompt,
+          taskOptions: {
+            maxSteps: settings.maxStepsPerTask,
+            approvalMode: settings.approvalMode,
+          },
+        });
 
-      if (!result.success) {
-        setError(result.error.message);
-        useMessagesStore.getState().addSystemMessage(`Error: ${result.error.message}`);
+        if (!result.success) {
+          setError(result.error.message);
+          useMessagesStore.getState().addSystemMessage(`Error: ${result.error.message}`);
+          useSessionStore.getState().setTaskRunning(false);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        setError(message);
+        useMessagesStore.getState().addSystemMessage(`Error: ${message}`);
         useSessionStore.getState().setTaskRunning(false);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     },
-    [sessionState, setTaskState, addUserMessage],
+    [isLoading, setTaskState, addUserMessage],
   );
 
   return { startTask, isLoading, error };

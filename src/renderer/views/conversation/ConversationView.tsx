@@ -5,6 +5,7 @@ import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
 import { useSessionStore } from '../../state/session-store';
 import { useMessagesStore } from '../../state/messages-store';
+import { useUIStore } from '../../state/ui-store';
 
 export function ConversationView(): React.JSX.Element {
   const taskState = useSessionStore((s) => s.taskState);
@@ -13,41 +14,63 @@ export function ConversationView(): React.JSX.Element {
 
   const handleSubmit = useCallback(
     (prompt: string) => {
-      if (!sessionState) return;
+      const currentSession = useSessionStore.getState().sessionState;
+      if (!currentSession) return;
+
+      const currentTask = useSessionStore.getState().taskState;
+      if (currentTask?.isRunning) return;
 
       addUserMessage(prompt);
 
       const taskId = `task-${Date.now()}`;
+      const settings = useUIStore.getState().settings;
+
+      // Set task state immediately so UI reflects running state
+      useSessionStore.getState().setTaskState({
+        taskId,
+        sessionId: currentSession.session.sessionId,
+        prompt,
+        currentStep: 0,
+        maxSteps: settings.maxStepsPerTask,
+        isRunning: true,
+      });
+
       void window.coworkIPC
         .startTask({
-          sessionId: sessionState.session.sessionId,
+          sessionId: currentSession.session.sessionId,
           taskId,
           prompt,
-          maxSteps: sessionState.policyBundle.llmPolicy.maxOutputTokens,
+          taskOptions: {
+            maxSteps: settings.maxStepsPerTask,
+            approvalMode: settings.approvalMode,
+          },
         })
         .then((result) => {
           if (!result.success) {
             useMessagesStore.getState().addSystemMessage(`Error: ${result.error.message}`);
+            useSessionStore.getState().setTaskRunning(false);
           }
         });
     },
-    [sessionState, addUserMessage],
+    [addUserMessage],
   );
 
   const handleCancel = useCallback(() => {
-    if (!sessionState || !taskState) return;
+    const currentSession = useSessionStore.getState().sessionState;
+    const currentTask = useSessionStore.getState().taskState;
+    if (!currentSession || !currentTask) return;
 
     void window.coworkIPC
       .cancelTask({
-        sessionId: sessionState.session.sessionId,
-        taskId: taskState.taskId,
+        sessionId: currentSession.session.sessionId,
+        taskId: currentTask.taskId,
       })
       .then((result) => {
         if (!result.success) {
           useMessagesStore.getState().addSystemMessage(`Cancel failed: ${result.error.message}`);
         }
       });
-  }, [sessionState, taskState]);
+  }, []);
 
   const isTaskRunning = taskState?.isRunning ?? false;
 

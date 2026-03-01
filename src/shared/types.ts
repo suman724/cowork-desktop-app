@@ -46,6 +46,8 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   workspaceServiceUrl: string;
   networkTimeoutMs: number;
+  tenantId?: string;
+  userId?: string;
 }
 
 /** Default settings */
@@ -55,6 +57,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   workspaceServiceUrl: 'http://localhost:8003',
   networkTimeoutMs: 30_000,
+  tenantId: 'dev-tenant',
+  userId: 'dev-user',
 };
 
 /** All navigable views */
@@ -101,13 +105,18 @@ export interface WorkspaceSummary {
   lastActiveAt: string;
 }
 
+/** Session summary as returned by GET /workspaces/{workspaceId}/sessions */
 export interface SessionSummary {
   sessionId: string;
-  workspaceId: string;
-  status: string;
   createdAt: string;
-  messageCount: number;
-  firstPrompt?: string;
+  lastTaskAt: string;
+  taskCount: number;
+}
+
+/** Paginated response from the workspace sessions endpoint */
+export interface ListSessionsResponse {
+  sessions: SessionSummary[];
+  nextToken?: string;
 }
 
 export type { ApprovalRequest, ConversationMessage, PolicyBundle, Session, Workspace };

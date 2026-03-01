@@ -24,6 +24,10 @@ export const useApprovalStore = create<ApprovalStore>((set) => ({
 
   addApproval: (approval) =>
     set((state) => {
+      // Prevent duplicate approvals
+      if (state.pendingApprovals.some((a) => a.approvalId === approval.approvalId)) {
+        return {};
+      }
       const pending = [...state.pendingApprovals, approval];
       return {
         pendingApprovals: pending,

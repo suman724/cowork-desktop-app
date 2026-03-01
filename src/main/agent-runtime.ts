@@ -22,6 +22,7 @@ export class AgentRuntimeManager {
   private client: JsonRpcClient | null = null;
   private status: AgentRuntimeStatus = 'stopped';
   private mainWindow: BrowserWindow | null = null;
+  private shuttingDown = false;
 
   /** Set the main window for push notifications */
   setMainWindow(win: BrowserWindow): void {
@@ -47,19 +48,46 @@ export class AgentRuntimeManager {
     }
 
     this.setStatus('starting');
+    this.shuttingDown = false;
 
     const binaryPath = this.locateBinary();
 
-    const child = spawn(binaryPath, ['--mode', 'stdio'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
-    });
+    let child: ChildProcess;
+    try {
+      child = spawn(binaryPath, ['--mode', 'stdio'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env },
+      });
+    } catch (err) {
+      console.error('[AgentRuntime] Failed to spawn:', err);
+      this.setStatus('crashed');
+      return;
+    }
 
     this.process = child;
 
+    // Handle spawn errors (e.g., ENOENT when binary doesn't exist)
+    child.on('error', (err: Error) => {
+      console.error('[AgentRuntime] Process error:', err.message);
+      if (!this.shuttingDown) {
+        this.process = null;
+        this.client = null;
+        this.setStatus('crashed');
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send(IPC_EVENTS.RUNTIME_CRASHED, {
+            code: null,
+            signal: null,
+          });
+        }
+      }
+    });
+
     const { stdout, stdin } = child;
 
-    const rpcClient = new JsonRpcClient(stdout, stdin);
+    // stdout and stdin are guaranteed non-null with stdio: ['pipe', 'pipe', 'pipe']
+    const childStdout = stdout as import('node:stream').Readable;
+    const childStdin = stdin as import('node:stream').Writable;
+    const rpcClient = new JsonRpcClient(childStdout, childStdin);
     this.client = rpcClient;
 
     // Forward notifications to renderer
@@ -75,11 +103,12 @@ export class AgentRuntimeManager {
 
     // Monitor for unexpected exit
     child.on('exit', (code, signal) => {
-      const wasRunning = this.status === 'running' || this.status === 'starting';
       this.process = null;
       this.client = null;
 
-      if (wasRunning) {
+      if (this.shuttingDown) {
+        this.setStatus('stopped');
+      } else if (this.status === 'running' || this.status === 'starting') {
         this.setStatus('crashed');
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send(IPC_EVENTS.RUNTIME_CRASHED, { code, signal });
@@ -90,8 +119,9 @@ export class AgentRuntimeManager {
     });
 
     // Collect stderr for debugging
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', (data: string) => {
+    const childStderr = child.stderr as import('node:stream').Readable;
+    childStderr.setEncoding('utf8');
+    childStderr.on('data', (data: string) => {
       console.error('[AgentRuntime stderr]', data.trim());
     });
 
@@ -108,6 +138,7 @@ export class AgentRuntimeManager {
       return;
     }
 
+    this.shuttingDown = true;
     const child = this.process;
     const client = this.client;
 
@@ -116,6 +147,10 @@ export class AgentRuntimeManager {
       await client.request('Shutdown', undefined, SHUTDOWN_TIMEOUT_MS);
       // Process should exit on its own
       await this.waitForExit(child, SHUTDOWN_TIMEOUT_MS);
+      client.close();
+      this.process = null;
+      this.client = null;
+      this.setStatus('stopped');
       return;
     } catch {
       // Shutdown RPC failed or timed out — escalate
@@ -126,6 +161,10 @@ export class AgentRuntimeManager {
       child.kill('SIGTERM');
       try {
         await this.waitForExit(child, SIGTERM_GRACE_MS);
+        client.close();
+        this.process = null;
+        this.client = null;
+        this.setStatus('stopped');
         return;
       } catch {
         // Still alive — SIGKILL

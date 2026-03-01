@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS } from '../../../../src/shared/types';
 // Mock window.coworkIPC
 Object.defineProperty(window, 'coworkIPC', {
   value: {
+    getSettings: vi.fn().mockResolvedValue({ success: true, data: DEFAULT_SETTINGS }),
     updateSettings: vi.fn().mockResolvedValue({ success: true, data: DEFAULT_SETTINGS }),
   },
   writable: true,

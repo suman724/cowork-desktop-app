@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { IpcResponse, AppSettings } from '../../shared/types';
+import type { AppSettings } from '../../shared/types';
 import { useUIStore } from '../state/ui-store';
 
 interface UseSettings {
@@ -18,9 +18,13 @@ export function useSettings(): UseSettings {
   // Load settings from main process on mount
   useEffect(() => {
     const load = async (): Promise<void> => {
-      const result: IpcResponse<AppSettings> = await window.coworkIPC.getSettings();
-      if (result.success) {
-        setSettings(result.data);
+      try {
+        const result = await window.coworkIPC.getSettings();
+        if (result.success) {
+          setSettings(result.data);
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
       }
     };
     void load();
@@ -31,20 +35,30 @@ export function useSettings(): UseSettings {
       setIsLoading(true);
       setError(null);
 
-      const updated = { ...settings, [key]: value };
+      // Read current settings from store to avoid stale closure
+      const currentSettings = useUIStore.getState().settings;
+      const updated = { ...currentSettings, [key]: value };
       setSettings(updated);
 
-      const result: IpcResponse<AppSettings> = await window.coworkIPC.updateSettings({
-        [key]: value,
-      });
+      try {
+        const result = await window.coworkIPC.updateSettings({
+          [key]: value,
+        });
 
-      if (!result.success) {
-        setError(result.error.message);
+        if (!result.success) {
+          // Rollback on failure
+          setSettings(currentSettings);
+          setError(result.error.message);
+        }
+      } catch (err) {
+        // Rollback on exception
+        setSettings(currentSettings);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     },
-    [settings, setSettings],
+    [setSettings],
   );
 
   return { settings, updateSetting, isLoading, error };

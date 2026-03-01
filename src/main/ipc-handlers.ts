@@ -1,4 +1,5 @@
 import { ipcMain, app } from 'electron';
+import * as os from 'node:os';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { IpcResponse, AppSettings } from '../shared/types';
 import type { AgentRuntimeManager } from './agent-runtime';
@@ -47,7 +48,7 @@ export function registerIpcHandlers(
       params: {
         tenantId: string;
         userId: string;
-        workspaceHint?: { scope: string; localPath?: string };
+        workspaceHint?: { localPaths?: string[] };
       },
     ) => {
       try {
@@ -63,8 +64,22 @@ export function registerIpcHandlers(
           {
             tenantId: params.tenantId,
             userId: params.userId,
+            executionEnvironment: 'desktop',
             workspaceHint: params.workspaceHint,
-            clientInfo: { name: 'cowork-desktop', version: app.getVersion() },
+            clientInfo: {
+              desktopAppVersion: app.getVersion(),
+              localAgentHostVersion: '1.0.0',
+              osFamily: os.platform(),
+              osVersion: os.release(),
+            },
+            supportedCapabilities: [
+              'File.Read',
+              'File.Write',
+              'File.Delete',
+              'Shell.Exec',
+              'Network.Http',
+              'LLM.Call',
+            ],
           },
           60_000,
         );
@@ -95,7 +110,11 @@ export function registerIpcHandlers(
         sessionId: string;
         taskId: string;
         prompt: string;
-        maxSteps?: number;
+        taskOptions?: {
+          maxSteps?: number;
+          allowNetwork?: boolean;
+          approvalMode?: 'always' | 'on_risky_actions' | 'never';
+        };
       },
     ) => {
       try {
@@ -105,7 +124,7 @@ export function registerIpcHandlers(
           sessionId: params.sessionId,
           taskId: params.taskId,
           prompt: params.prompt,
-          taskOptions: { maxSteps: params.maxSteps },
+          taskOptions: params.taskOptions,
         });
         return success(result);
       } catch (err) {
@@ -228,7 +247,7 @@ export function registerIpcHandlers(
   ipcMain.handle(IPC_CHANNELS.SETTINGS_UPDATE, (_event, params: Partial<AppSettings>) => {
     const updated = settingsStore.update(params);
     // Update workspace client config when URL changes
-    if (params.workspaceServiceUrl || params.networkTimeoutMs) {
+    if (params.workspaceServiceUrl !== undefined || params.networkTimeoutMs !== undefined) {
       workspaceClient.updateConfig({
         baseUrl: updated.workspaceServiceUrl,
         timeoutMs: updated.networkTimeoutMs,

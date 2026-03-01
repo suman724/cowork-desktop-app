@@ -110,6 +110,16 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
           ...last,
           toolCalls: [...(last.toolCalls ?? []), toolCall],
         };
+      } else {
+        // Create a new assistant message to hold the tool call
+        messages.push({
+          id: nextId(),
+          role: 'assistant',
+          content: '',
+          timestamp: new Date().toISOString(),
+          isStreaming: true,
+          toolCalls: [toolCall],
+        });
       }
 
       return { messages };
@@ -117,17 +127,21 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
 
   updateToolCall: (toolCallId, update) =>
     set((state) => {
-      const messages = state.messages.map((msg) => {
-        if (msg.role !== 'assistant' || !msg.toolCalls) return msg;
+      // Find which message contains this tool call
+      const msgIndex = state.messages.findIndex(
+        (msg) => msg.role === 'assistant' && msg.toolCalls?.some((tc) => tc.id === toolCallId),
+      );
+      if (msgIndex === -1) return {};
 
-        const updatedCalls = msg.toolCalls.map((tc) =>
-          tc.id === toolCallId ? { ...tc, ...update } : tc,
-        );
+      const msg = state.messages[msgIndex];
+      if (!msg || !msg.toolCalls) return {};
 
-        if (updatedCalls === msg.toolCalls) return msg;
-        return { ...msg, toolCalls: updatedCalls };
-      });
+      const updatedCalls = msg.toolCalls.map((tc) =>
+        tc.id === toolCallId ? { ...tc, ...update } : tc,
+      );
 
+      const messages = [...state.messages];
+      messages[msgIndex] = { ...msg, toolCalls: updatedCalls };
       return { messages };
     }),
 

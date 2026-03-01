@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
 import {
@@ -11,21 +11,35 @@ import {
 import { Input } from '../../components/ui/input';
 import { Separator } from '../../components/ui/separator';
 import { useUIStore } from '../../state/ui-store';
+import { useSettings } from '../../hooks/use-settings';
 import type { AppSettings } from '../../../shared/types';
 
 export function SettingsView(): React.JSX.Element {
   const setView = useUIStore((s) => s.setView);
-  const settings = useUIStore((s) => s.settings);
-  const setSettings = useUIStore((s) => s.setSettings);
+  const { settings, updateSetting, error } = useSettings();
 
-  const updateSetting = useCallback(
-    async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-      const updated = { ...settings, [key]: value };
-      setSettings(updated);
-      await window.coworkIPC.updateSettings({ [key]: value });
-    },
-    [settings, setSettings],
-  );
+  // Local state for numeric inputs — only commit on blur
+  const [localMaxSteps, setLocalMaxSteps] = useState(String(settings.maxStepsPerTask));
+  const [localTimeout, setLocalTimeout] = useState(String(settings.networkTimeoutMs));
+
+  const commitMaxSteps = useCallback(() => {
+    const val = parseInt(localMaxSteps, 10);
+    if (!isNaN(val) && val > 0 && val <= 200) {
+      void updateSetting('maxStepsPerTask', val);
+    } else {
+      // Reset to current setting on invalid input
+      setLocalMaxSteps(String(settings.maxStepsPerTask));
+    }
+  }, [localMaxSteps, settings.maxStepsPerTask, updateSetting]);
+
+  const commitTimeout = useCallback(() => {
+    const val = parseInt(localTimeout, 10);
+    if (!isNaN(val) && val >= 1000 && val <= 120000) {
+      void updateSetting('networkTimeoutMs', val);
+    } else {
+      setLocalTimeout(String(settings.networkTimeoutMs));
+    }
+  }, [localTimeout, settings.networkTimeoutMs, updateSetting]);
 
   return (
     <div className="flex h-full flex-col">
@@ -38,6 +52,10 @@ export function SettingsView(): React.JSX.Element {
 
       <div className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-lg space-y-6">
+          {error && (
+            <div className="bg-destructive/10 text-destructive rounded p-3 text-sm">{error}</div>
+          )}
+
           {/* Theme */}
           <div className="space-y-2">
             <Label>Theme</Label>
@@ -87,12 +105,11 @@ export function SettingsView(): React.JSX.Element {
               type="number"
               min={1}
               max={200}
-              value={settings.maxStepsPerTask}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val) && val > 0) {
-                  void updateSetting('maxStepsPerTask', val);
-                }
+              value={localMaxSteps}
+              onChange={(e) => setLocalMaxSteps(e.target.value)}
+              onBlur={commitMaxSteps}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitMaxSteps();
               }}
             />
           </div>
@@ -106,12 +123,11 @@ export function SettingsView(): React.JSX.Element {
               type="number"
               min={1000}
               max={120000}
-              value={settings.networkTimeoutMs}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val) && val >= 1000) {
-                  void updateSetting('networkTimeoutMs', val);
-                }
+              value={localTimeout}
+              onChange={(e) => setLocalTimeout(e.target.value)}
+              onBlur={commitTimeout}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitTimeout();
               }}
             />
           </div>

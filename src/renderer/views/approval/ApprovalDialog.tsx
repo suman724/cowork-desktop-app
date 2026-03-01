@@ -18,18 +18,29 @@ export function ApprovalDialog(): React.JSX.Element {
   const resolveCurrentApproval = useApprovalStore((s) => s.resolveCurrentApproval);
   const [reason, setReason] = useState('');
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleDecision = useCallback(
     async (decision: 'approved' | 'denied') => {
       if (!currentApproval) return;
 
-      await window.coworkIPC.resolveApproval({
-        approvalId: currentApproval.approvalId,
-        decision,
-        reason: reason.trim() || undefined,
-      });
+      setError(null);
+      try {
+        const result = await window.coworkIPC.resolveApproval({
+          approvalId: currentApproval.approvalId,
+          decision,
+          reason: reason.trim() || undefined,
+        });
 
-      setReason('');
-      resolveCurrentApproval();
+        if (result.success) {
+          setReason('');
+          resolveCurrentApproval();
+        } else {
+          setError(result.error.message);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to resolve approval');
+      }
     },
     [currentApproval, reason, resolveCurrentApproval],
   );
@@ -57,6 +68,8 @@ export function ApprovalDialog(): React.JSX.Element {
             rows={2}
             className="resize-none"
           />
+
+          {error && <p className="text-destructive text-sm">{error}</p>}
         </div>
 
         <AlertDialogFooter>

@@ -93,7 +93,13 @@ export class JsonRpcClient extends EventEmitter {
       });
 
       const line = JSON.stringify(msg) + '\n';
-      this.output.write(line);
+      try {
+        this.output.write(line);
+      } catch (writeErr) {
+        this.pending.delete(id);
+        clearTimeout(timer);
+        reject(writeErr instanceof Error ? writeErr : new Error('Write failed'));
+      }
     });
   }
 
@@ -149,7 +155,10 @@ export class JsonRpcClient extends EventEmitter {
 
     if (msg.error) {
       const err = new Error(msg.error.message);
-      (err as Error & { code: number }).code = msg.error.code;
+      (err as Error & { code: number; data?: unknown }).code = msg.error.code;
+      if (msg.error.data !== undefined) {
+        (err as Error & { code: number; data?: unknown }).data = msg.error.data;
+      }
       pending.reject(err);
     } else {
       pending.resolve(msg.result);

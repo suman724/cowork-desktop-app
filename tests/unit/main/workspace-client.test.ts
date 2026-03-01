@@ -35,17 +35,19 @@ describe('WorkspaceServiceClient', () => {
   });
 
   it('fetches sessions for a workspace', async () => {
-    const mockSessions = [{ sessionId: 'sess-1', status: 'completed' }];
+    const mockSessions = [
+      { sessionId: 'sess-1', createdAt: '2026-01-01', lastTaskAt: '2026-01-01', taskCount: 1 },
+    ];
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve(mockSessions),
+      json: () => Promise.resolve({ sessions: mockSessions }),
     });
 
     const result = await client.listSessions('ws-1');
 
     expect(result).toEqual(mockSessions);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:8003/workspaces/ws-1/sessions',
+      'http://localhost:8003/workspaces/ws-1/sessions?limit=100',
       expect.any(Object),
     );
   });
