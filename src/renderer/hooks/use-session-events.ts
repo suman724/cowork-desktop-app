@@ -204,7 +204,9 @@ export function useSessionEvents(): void {
         case EVENT_TYPE.LLM_RETRY: {
           const attempt = typeof p.attempt === 'number' ? p.attempt : 0;
           const maxRetries = typeof p.maxRetries === 'number' ? p.maxRetries : 0;
-          addSystemMessage(`Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`);
+          addSystemMessage(
+            `Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`,
+          );
           break;
         }
 
