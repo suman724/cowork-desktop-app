@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 // IPC types are inferred from window.coworkIPC
 import { useApprovalStore } from '../state/approval-store';
 
@@ -12,13 +12,15 @@ interface UseApproval {
 export function useApproval(): UseApproval {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false);
   const resolveCurrentApproval = useApprovalStore((s) => s.resolveCurrentApproval);
 
   const resolve = useCallback(
     async (decision: 'approved' | 'denied', reason?: string) => {
       const currentApproval = useApprovalStore.getState().currentApproval;
-      if (!currentApproval || isLoading) return;
+      if (!currentApproval || loadingRef.current) return;
 
+      loadingRef.current = true;
       setIsLoading(true);
       setError(null);
 
@@ -37,10 +39,11 @@ export function useApproval(): UseApproval {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
+        loadingRef.current = false;
         setIsLoading(false);
       }
     },
-    [isLoading, resolveCurrentApproval],
+    [resolveCurrentApproval],
   );
 
   const approve = useCallback((reason?: string) => resolve('approved', reason), [resolve]);

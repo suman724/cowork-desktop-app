@@ -9,6 +9,7 @@ interface WorkspaceServiceConfig {
   baseUrl: string;
   timeoutMs: number;
   maxRetries: number;
+  authToken?: string;
 }
 
 const DEFAULT_CONFIG: WorkspaceServiceConfig = {
@@ -66,14 +67,19 @@ export class WorkspaceServiceClient {
         const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
 
         try {
+          const headers: Record<string, string> = { Accept: 'application/json' };
+          if (this.config.authToken) {
+            headers['Authorization'] = `Bearer ${this.config.authToken}`;
+          }
+
           const response = await fetch(url, {
             signal: controller.signal,
-            headers: { Accept: 'application/json' },
+            headers,
           });
 
           if (!response.ok) {
             const body = await response.text().catch(() => '');
-            const err = new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);
+            const err = new Error(`HTTP ${response.status}: ${body.slice(0, 1000)}`);
             (err as Error & { statusCode: number }).statusCode = response.status;
             throw err;
           }

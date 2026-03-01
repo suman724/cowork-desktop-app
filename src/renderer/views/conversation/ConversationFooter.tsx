@@ -16,7 +16,13 @@ export function ConversationFooter({ onCancel }: ConversationFooterProps): React
         Step {taskState.currentStep}/{taskState.maxSteps}
       </span>
       {taskState.isRunning && (
-        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onCancel}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-xs"
+          onClick={onCancel}
+          aria-label="Cancel current task"
+        >
           Cancel
         </Button>
       )}

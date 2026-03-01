@@ -3,76 +3,54 @@ import { ConversationHeader } from './ConversationHeader';
 import { ConversationFooter } from './ConversationFooter';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
+import { Button } from '../../components/ui/button';
 import { useSessionStore } from '../../state/session-store';
-import { useMessagesStore } from '../../state/messages-store';
 import { useUIStore } from '../../state/ui-store';
+import { useCreateSession } from '../../hooks/use-create-session';
+import { useStartTask } from '../../hooks/use-start-task';
+import { useCancelTask } from '../../hooks/use-cancel-task';
 
 export function ConversationView(): React.JSX.Element {
   const taskState = useSessionStore((s) => s.taskState);
   const sessionState = useSessionStore((s) => s.sessionState);
-  const addUserMessage = useMessagesStore((s) => s.addUserMessage);
+  const { createSession, isLoading: isCreatingSession } = useCreateSession();
+  const { startTask } = useStartTask();
+  const { cancelTask } = useCancelTask();
 
   const handleSubmit = useCallback(
     (prompt: string) => {
-      const currentSession = useSessionStore.getState().sessionState;
-      if (!currentSession) return;
-
-      const currentTask = useSessionStore.getState().taskState;
-      if (currentTask?.isRunning) return;
-
-      addUserMessage(prompt);
-
-      const taskId = `task-${Date.now()}`;
-      const settings = useUIStore.getState().settings;
-
-      // Set task state immediately so UI reflects running state
-      useSessionStore.getState().setTaskState({
-        taskId,
-        sessionId: currentSession.session.sessionId,
-        prompt,
-        currentStep: 0,
-        maxSteps: settings.maxStepsPerTask,
-        isRunning: true,
-      });
-
-      void window.coworkIPC
-        .startTask({
-          sessionId: currentSession.session.sessionId,
-          taskId,
-          prompt,
-          taskOptions: {
-            maxSteps: settings.maxStepsPerTask,
-            approvalMode: settings.approvalMode,
-          },
-        })
-        .then((result) => {
-          if (!result.success) {
-            useMessagesStore.getState().addSystemMessage(`Error: ${result.error.message}`);
-            useSessionStore.getState().setTaskRunning(false);
-          }
-        });
+      void startTask(prompt);
     },
-    [addUserMessage],
+    [startTask],
   );
 
   const handleCancel = useCallback(() => {
-    const currentSession = useSessionStore.getState().sessionState;
-    const currentTask = useSessionStore.getState().taskState;
-    if (!currentSession || !currentTask) return;
+    void cancelTask();
+  }, [cancelTask]);
 
-    void window.coworkIPC
-      .cancelTask({
-        sessionId: currentSession.session.sessionId,
-        taskId: currentTask.taskId,
-      })
-      .then((result) => {
-        if (!result.success) {
-          useMessagesStore.getState().addSystemMessage(`Cancel failed: ${result.error.message}`);
-        }
-      });
-  }, []);
+  const handleNewSession = useCallback(() => {
+    const settings = useUIStore.getState().settings;
+    void createSession({
+      tenantId: settings.tenantId ?? 'dev-tenant',
+      userId: settings.userId ?? 'dev-user',
+    });
+  }, [createSession]);
 
   const isTaskRunning = taskState?.isRunning ?? false;
+
+  if (!sessionState) {
+    return (
+      <div className="flex h-full flex-col">
+        <ConversationHeader />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4">
+          <p className="text-muted-foreground text-sm">No active session</p>
+          <Button onClick={handleNewSession} disabled={isCreatingSession}>
+            {isCreatingSession ? 'Creating...' : 'New Session'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -81,8 +59,8 @@ export function ConversationView(): React.JSX.Element {
       <ConversationFooter onCancel={handleCancel} />
       <PromptInput
         onSubmit={handleSubmit}
-        disabled={isTaskRunning || !sessionState}
-        placeholder={sessionState ? 'Type a message...' : 'Create a session first'}
+        disabled={isTaskRunning}
+        placeholder="Type a message..."
       />
     </div>
   );

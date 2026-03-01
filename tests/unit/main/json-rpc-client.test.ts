@@ -155,4 +155,62 @@ describe('JsonRpcClient', () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(errorHandler).toHaveBeenCalledWith(expect.any(Error));
   });
+
+  it('rejects messages with invalid JSON-RPC version', async () => {
+    const errorHandler = vi.fn();
+    client.on('error', errorHandler);
+
+    input.write('{"jsonrpc":"1.0","method":"Notify","params":{}}\n');
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('Invalid JSON-RPC version') }),
+    );
+  });
+
+  it('rejects messages that are not objects', async () => {
+    const errorHandler = vi.fn();
+    client.on('error', errorHandler);
+
+    input.write('"just a string"\n');
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('not an object') }),
+    );
+  });
+
+  it('handles concurrent requests with interleaved responses', async () => {
+    // Start two requests concurrently
+    const promise1 = client.request('Method1', { n: 1 });
+    const promise2 = client.request('Method2', { n: 2 });
+
+    // Respond out of order: respond to request 2 first, then 1
+    setTimeout(() => {
+      input.write('{"jsonrpc":"2.0","id":2,"result":"result-2"}\n');
+      input.write('{"jsonrpc":"2.0","id":1,"result":"result-1"}\n');
+    }, 10);
+
+    const [r1, r2] = await Promise.all([promise1, promise2]);
+    expect(r1).toBe('result-1');
+    expect(r2).toBe('result-2');
+  });
+
+  it('preserves error data field', async () => {
+    setTimeout(() => {
+      input.write(
+        '{"jsonrpc":"2.0","id":1,"error":{"code":-32020,"message":"Capability denied","data":{"capability":"Shell.Exec"}}}\n',
+      );
+    }, 10);
+
+    try {
+      await client.request('Forbidden');
+      expect.fail('Should have thrown');
+    } catch (err) {
+      const e = err as Error & { code: number; data?: unknown };
+      expect(e.message).toBe('Capability denied');
+      expect(e.code).toBe(-32020);
+      expect(e.data).toEqual({ capability: 'Shell.Exec' });
+    }
+  });
 });

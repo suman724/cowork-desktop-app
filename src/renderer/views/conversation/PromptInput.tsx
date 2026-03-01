@@ -43,12 +43,14 @@ export function PromptInput({
           disabled={disabled}
           className="min-h-[44px] resize-none"
           rows={1}
+          aria-label="Message input"
           data-testid="prompt-input"
         />
         <Button
           onClick={handleSubmit}
           disabled={disabled || value.trim().length === 0}
           size="default"
+          aria-label="Send message"
           data-testid="send-button"
         >
           Send

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 // IPC types are inferred from window.coworkIPC
 import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
@@ -13,6 +13,7 @@ interface UseStartTask {
 export function useStartTask(): UseStartTask {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false);
   const setTaskState = useSessionStore((s) => s.setTaskState);
   const addUserMessage = useMessagesStore((s) => s.addUserMessage);
 
@@ -24,8 +25,9 @@ export function useStartTask(): UseStartTask {
         return;
       }
 
-      if (isLoading) return;
+      if (loadingRef.current) return;
 
+      loadingRef.current = true;
       setIsLoading(true);
       setError(null);
 
@@ -64,10 +66,11 @@ export function useStartTask(): UseStartTask {
         useMessagesStore.getState().addSystemMessage(`Error: ${message}`);
         useSessionStore.getState().setTaskRunning(false);
       } finally {
+        loadingRef.current = false;
         setIsLoading(false);
       }
     },
-    [isLoading, setTaskState, addUserMessage],
+    [setTaskState, addUserMessage],
   );
 
   return { startTask, isLoading, error };

@@ -31,8 +31,6 @@ export interface JsonRpcError {
   data?: unknown;
 }
 
-type JsonRpcMessage = JsonRpcResponse | JsonRpcNotification;
-
 interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
@@ -130,18 +128,40 @@ export class JsonRpcClient extends EventEmitter {
       const trimmed = line.trim();
       if (trimmed.length === 0) continue;
 
-      let msg: JsonRpcMessage;
+      let parsed: unknown;
       try {
-        msg = JSON.parse(trimmed) as JsonRpcMessage;
+        parsed = JSON.parse(trimmed);
       } catch {
         this.emit('error', new Error(`Failed to parse JSON-RPC message: ${trimmed.slice(0, 100)}`));
         continue;
       }
 
-      if ('id' in msg) {
-        this.handleResponse(msg);
-      } else if ('method' in msg) {
-        this.handleNotification(msg);
+      if (typeof parsed !== 'object' || parsed === null) {
+        this.emit('error', new Error(`Invalid JSON-RPC message: not an object`));
+        continue;
+      }
+
+      const obj = parsed as Record<string, unknown>;
+      if (obj.jsonrpc !== '2.0') {
+        this.emit('error', new Error(`Invalid JSON-RPC version: ${String(obj.jsonrpc)}`));
+        continue;
+      }
+
+      if ('id' in obj && typeof obj.id === 'number') {
+        const response: JsonRpcResponse = {
+          jsonrpc: '2.0',
+          id: obj.id,
+          result: obj.result,
+          error: obj.error as JsonRpcError | undefined,
+        };
+        this.handleResponse(response);
+      } else if ('method' in obj && typeof obj.method === 'string') {
+        const notification: JsonRpcNotification = {
+          jsonrpc: '2.0',
+          method: obj.method,
+          params: obj.params,
+        };
+        this.handleNotification(notification);
       }
     }
   }

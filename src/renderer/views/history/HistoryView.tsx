@@ -10,7 +10,8 @@ import type { DisplayMessage } from '../../../shared/types';
 
 export function HistoryView(): React.JSX.Element {
   const setView = useUIStore((s) => s.setView);
-  const settings = useUIStore((s) => s.settings);
+  const tenantId = useUIStore((s) => s.settings.tenantId);
+  const userId = useUIStore((s) => s.settings.userId);
   const selectedWorkspaceId = useHistoryStore((s) => s.selectedWorkspaceId);
   const setWorkspaces = useHistoryStore((s) => s.setWorkspaces);
   const setSessions = useHistoryStore((s) => s.setSessions);
@@ -26,8 +27,8 @@ export function HistoryView(): React.JSX.Element {
       setError(null);
       try {
         const result = await window.coworkIPC.listWorkspaces({
-          tenantId: settings.tenantId ?? 'dev-tenant',
-          userId: settings.userId ?? 'dev-user',
+          tenantId: tenantId ?? 'dev-tenant',
+          userId: userId ?? 'dev-user',
         });
         if (result.success) {
           setWorkspaces(result.data);
@@ -40,7 +41,7 @@ export function HistoryView(): React.JSX.Element {
       setLoadingWorkspaces(false);
     };
     void load();
-  }, [setWorkspaces, setLoadingWorkspaces, setError, settings]);
+  }, [setWorkspaces, setLoadingWorkspaces, setError, tenantId, userId]);
 
   // Load sessions when workspace selection changes
   useEffect(() => {
@@ -87,7 +88,7 @@ export function HistoryView(): React.JSX.Element {
             // Convert ConversationMessages to DisplayMessages
             const displayMessages: DisplayMessage[] = result.data.map((msg, i) => ({
               id: `history-${i}`,
-              role: msg.role === 'tool' ? 'system' : msg.role,
+              role: msg.role,
               content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
               timestamp: msg.timestamp,
             }));

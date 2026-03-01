@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import type { IpcResponse, Workspace } from '../../shared/types';
 import { useHistoryStore } from '../state/history-store';
 
 interface UseWorkspaces {
@@ -14,19 +13,21 @@ export function useWorkspaces(): UseWorkspaces {
   const fetchWorkspaces = useCallback(
     async (tenantId: string, userId: string) => {
       setLoadingWorkspaces(true);
+      setError(null);
 
-      const result: IpcResponse<unknown> = await window.coworkIPC.listWorkspaces({
-        tenantId,
-        userId,
-      });
+      try {
+        const result = await window.coworkIPC.listWorkspaces({ tenantId, userId });
 
-      if (result.success) {
-        setWorkspaces(result.data as Workspace[]);
-      } else {
-        setError(result.error.message);
+        if (result.success) {
+          setWorkspaces(result.data);
+        } else {
+          setError(result.error.message);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load workspaces');
+      } finally {
+        setLoadingWorkspaces(false);
       }
-
-      setLoadingWorkspaces(false);
     },
     [setWorkspaces, setLoadingWorkspaces, setError],
   );

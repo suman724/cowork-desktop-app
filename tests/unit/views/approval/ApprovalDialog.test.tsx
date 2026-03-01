@@ -65,4 +65,77 @@ describe('ApprovalDialog', () => {
       });
     });
   });
+
+  it('calls resolveApproval with denied decision on deny', async () => {
+    useApprovalStore.getState().addApproval({
+      approvalId: 'a-2',
+      sessionId: 's-1',
+      taskId: 't-1',
+      title: 'Shell command',
+      actionSummary: 'Run: rm -rf /',
+      riskLevel: 'high',
+    } as never);
+
+    render(<ApprovalDialog />);
+
+    fireEvent.click(screen.getByText('Deny'));
+
+    await vi.waitFor(() => {
+      expect(mockResolveApproval).toHaveBeenCalledWith({
+        approvalId: 'a-2',
+        decision: 'denied',
+        reason: undefined,
+      });
+    });
+  });
+
+  it('shows error when resolveApproval fails', async () => {
+    mockResolveApproval.mockResolvedValueOnce({
+      success: false,
+      error: { code: 'APPROVAL_ERROR', message: 'Approval timed out' },
+    });
+
+    useApprovalStore.getState().addApproval({
+      approvalId: 'a-3',
+      sessionId: 's-1',
+      taskId: 't-1',
+      title: 'Network request',
+      actionSummary: 'Fetch https://example.com',
+      riskLevel: 'medium',
+    } as never);
+
+    render(<ApprovalDialog />);
+
+    fireEvent.click(screen.getByText('Approve'));
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('Approval timed out')).toBeInTheDocument();
+    });
+
+    // Approval should still be in the queue (not resolved)
+    expect(useApprovalStore.getState().currentApproval).not.toBeNull();
+  });
+
+  it('does not advance queue when IPC throws', async () => {
+    mockResolveApproval.mockRejectedValueOnce(new Error('IPC bridge down'));
+
+    useApprovalStore.getState().addApproval({
+      approvalId: 'a-4',
+      sessionId: 's-1',
+      taskId: 't-1',
+      title: 'File read',
+      actionSummary: 'Read /etc/passwd',
+      riskLevel: 'high',
+    } as never);
+
+    render(<ApprovalDialog />);
+
+    fireEvent.click(screen.getByText('Approve'));
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('IPC bridge down')).toBeInTheDocument();
+    });
+
+    expect(useApprovalStore.getState().currentApproval?.approvalId).toBe('a-4');
+  });
 });

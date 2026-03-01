@@ -54,7 +54,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   approvalMode: 'on_risky_actions',
   maxStepsPerTask: 40,
-  theme: 'dark',
+  theme: 'system',
   workspaceServiceUrl: 'http://localhost:8003',
   networkTimeoutMs: 30_000,
   tenantId: 'dev-tenant',
@@ -72,7 +72,7 @@ export type IpcResponse<T> =
 /** Message as displayed in the UI (extends the contract type with UI state) */
 export interface DisplayMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: string;
   toolCalls?: ToolCallInfo[];

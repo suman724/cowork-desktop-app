@@ -145,7 +145,10 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
       return { messages };
     }),
 
-  loadHistory: (messages) => set({ messages }),
+  loadHistory: (messages) => {
+    messageCounter = 0;
+    set({ messages });
+  },
 
   clear: () => {
     messageCounter = 0;

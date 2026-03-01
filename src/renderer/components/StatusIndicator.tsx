@@ -22,8 +22,12 @@ const STATUS_LABELS: Record<AgentRuntimeStatus, string> = {
 
 export function StatusIndicator({ status, className }: StatusIndicatorProps): React.JSX.Element {
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <div className={cn('h-2 w-2 rounded-full', STATUS_COLORS[status])} />
+    <div
+      className={cn('flex items-center gap-2', className)}
+      role="status"
+      aria-label={`Agent runtime: ${STATUS_LABELS[status]}`}
+    >
+      <div className={cn('h-2 w-2 rounded-full', STATUS_COLORS[status])} aria-hidden="true" />
       <span className="text-muted-foreground text-xs">{STATUS_LABELS[status]}</span>
     </div>
   );

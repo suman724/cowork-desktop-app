@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { IpcResponse, DisplayMessage, ConversationMessage } from '../../shared/types';
+import type { DisplayMessage } from '../../shared/types';
 import { useMessagesStore } from '../state/messages-store';
 
 interface UseSessionHistory {
@@ -18,25 +18,28 @@ export function useSessionHistory(): UseSessionHistory {
       setIsLoading(true);
       setError(null);
 
-      const result: IpcResponse<unknown> = await window.coworkIPC.getSessionHistory({
-        workspaceId,
-        sessionId,
-      });
+      try {
+        const result = await window.coworkIPC.getSessionHistory({
+          workspaceId,
+          sessionId,
+        });
 
-      if (result.success) {
-        const messages = result.data as ConversationMessage[];
-        const displayMessages: DisplayMessage[] = messages.map((msg) => ({
-          id: msg.messageId,
-          role: msg.role as DisplayMessage['role'],
-          content: msg.content,
-          timestamp: msg.timestamp,
-        }));
-        loadHistory(displayMessages);
-      } else {
-        setError(result.error.message);
+        if (result.success) {
+          const displayMessages: DisplayMessage[] = result.data.map((msg, i) => ({
+            id: `history-${String(i)}`,
+            role: msg.role,
+            content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+            timestamp: msg.timestamp,
+          }));
+          loadHistory(displayMessages);
+        } else {
+          setError(result.error.message);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load history');
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     },
     [loadHistory],
   );

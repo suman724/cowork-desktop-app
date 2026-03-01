@@ -28,7 +28,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 
 **Shared** (`src/shared/`) — Imported by both processes:
 - `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent`, `AppSettings` + re-exports from `@cowork/platform`
-- `ipc-channels.ts` — `IPC_CHANNELS` (13 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
+- `ipc-channels.ts` — `IPC_CHANNELS` (14 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
 
 ## Key Constraints
 
@@ -37,6 +37,9 @@ The app follows a strict main/renderer process split with a typed preload bridge
 - **Renderer never calls JSON-RPC directly** — all proxied through preload bridge + `ipcMain.handle`.
 - **IPC uses result wrappers, never throws** — every handler returns `IpcResponse<T>` (`{ success, data } | { success, error }`).
 - **Streaming text accumulation in Zustand** — `text_chunk` events append to current assistant message via `messagesStore.appendTextChunk()`.
+- **Settings validation** — `SettingsStore.update()` clamps numeric ranges and rejects invalid enum values via `validateSettings()`.
+- **JSON-RPC version validation** — `JsonRpcClient` validates `jsonrpc: '2.0'` on all incoming messages before processing.
+- **Event payload runtime validation** — `use-session-events.ts` uses `typeof` checks on every payload field instead of unsafe `as` casts.
 - All views read/write through Zustand stores for consistent UI state.
 
 ## IPC Channels
@@ -58,6 +61,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 | `settings:update` | Local SettingsStore |
 | `runtime:status` | AgentRuntimeManager |
 | `runtime:shutdown` | AgentRuntimeManager |
+| `app:get-version` | Electron `app.getVersion()` |
 
 **Push events** (main → renderer via `webContents.send`):
 - `push:session-event` — `SessionEvent` notifications from agent-runtime
@@ -156,8 +160,9 @@ cowork-desktop-app/
   tests/
     setup.ts                 # @testing-library/jest-dom/vitest
     unit/
-      main/                  # json-rpc-client, agent-runtime, workspace-client, settings-store
+      main/                  # json-rpc-client, agent-runtime, ipc-handlers, workspace-client, settings-store
       state/                 # session-store, messages-store, approval-store, history-store
+      hooks/                 # use-create-session, use-settings, use-approval, use-cancel-task, use-patch-preview
       components/            # ErrorBoundary
       views/                 # PromptInput, ToolCallCard, ApprovalDialog, HistoryView, SettingsView
     e2e/
@@ -173,7 +178,7 @@ cowork-desktop-app/
 - **TypeScript**: 5.7+ with `strict: true`, `noUncheckedIndexedAccess: true`
 - **Linting**: ESLint 9 flat config with `typescript-eslint/strictTypeChecked`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-config-prettier`. shadcn/ui components in `components/ui/` are excluded from linting.
 - **Formatting**: Prettier — single quotes, trailing commas, 100 print width, 2-space indent, `prettier-plugin-tailwindcss`
-- **Testing**: Vitest + React Testing Library (unit), Playwright (E2E). 85 unit tests across 14 test files.
+- **Testing**: Vitest + React Testing Library (unit), Playwright (E2E). 156 unit tests across 20 test files.
 - **Build**: electron-vite for development (3 build targets: main, preload, renderer), electron-builder for distribution
 - **UI**: shadcn/ui (Radix + Tailwind CSS v4) with 17 primitives. Tailwind v4 uses CSS-first config via `@tailwindcss/vite`.
 - **State management**: Zustand v5 (lightweight, TypeScript-native)
@@ -208,19 +213,20 @@ make clean             # Remove out/, dist/, coverage/, node_modules/.cache
 - **Zustand** for state management — one store per domain (session, messages, approval, history, ui). No Redux.
 - **Error Boundaries** — `<ErrorBoundary>` wraps all views in `App.tsx` with a fallback UI.
 - **Custom hooks** for IPC calls: `useCreateSession()`, `useStartTask()`, etc. Each returns `{ action, isLoading, error }` and handles `IpcResponse<T>` unwrapping.
-- **Theme via CSS class** — `class="dark"` on `<html>`, works with shadcn/ui CSS variables. Supports light/dark/system.
+- **Theme via CSS class** — `class="dark"` on `<html>`, works with shadcn/ui CSS variables. Supports light/dark/system (default: system).
+- **Accessibility** — ARIA labels on interactive controls (PromptInput, Send/Cancel buttons, StatusIndicator), DiffViewer has `role="region"` with label.
 - **No `any` types** — use `unknown` and narrow with type guards.
 
 ### Error Handling
 
 - **IPC errors**: Every `ipcMain.handle` wraps results in `IpcResponse<T>`. JSON-RPC errors are translated via a `rpcError()` helper. Renderer never sees raw exceptions.
 - **React Error Boundaries**: Catch rendering errors, show fallback UI with "Try Again" button.
-- **Network errors**: Workspace Service calls wrapped with 3-retry exponential backoff (500ms base, no retry on 4xx).
+- **Network errors**: Workspace Service calls wrapped with 3-retry exponential backoff (500ms base, jitter up to 50% of delay, no retry on 4xx based on `statusCode` property).
 - **Agent-runtime crashes**: Detect child process exit, set status to `crashed`, notify renderer via `push:runtime-crashed` event.
 
 ### Testing
 
-- **Unit tests (Vitest + React Testing Library)**: 85 tests across 14 files. Test stores, hooks, components in isolation. Mock `window.coworkIPC` for renderer tests.
+- **Unit tests (Vitest + React Testing Library)**: 156 tests across 20 files. Test stores, hooks (via `renderHook`), IPC handlers, main-process modules, and view components in isolation. Mock `window.coworkIPC` for renderer tests.
 - **Coverage**: 80% threshold for statements, branches, functions, lines.
 - **E2E tests (Playwright)**: Test skeleton with `mock-agent-runtime.js` providing canned JSON-RPC responses.
 - **No snapshot tests** — assertion-based tests only.

@@ -6,6 +6,47 @@ import { DEFAULT_SETTINGS } from '../shared/types';
 
 const SETTINGS_FILENAME = 'settings.json';
 
+const VALID_THEMES = new Set(['light', 'dark', 'system']);
+const VALID_APPROVAL_MODES = new Set(['always', 'on_risky_actions', 'never']);
+
+/**
+ * Validate and clamp settings values.
+ * Returns a sanitized copy merged with defaults for any missing/invalid fields.
+ */
+function validateSettings(raw: Record<string, unknown>): AppSettings {
+  const settings = { ...DEFAULT_SETTINGS };
+
+  if (typeof raw.theme === 'string' && VALID_THEMES.has(raw.theme)) {
+    settings.theme = raw.theme as AppSettings['theme'];
+  }
+
+  if (typeof raw.approvalMode === 'string' && VALID_APPROVAL_MODES.has(raw.approvalMode)) {
+    settings.approvalMode = raw.approvalMode as AppSettings['approvalMode'];
+  }
+
+  if (typeof raw.maxStepsPerTask === 'number' && raw.maxStepsPerTask >= 1) {
+    settings.maxStepsPerTask = Math.min(Math.round(raw.maxStepsPerTask), 200);
+  }
+
+  if (typeof raw.networkTimeoutMs === 'number' && raw.networkTimeoutMs >= 1000) {
+    settings.networkTimeoutMs = Math.min(Math.round(raw.networkTimeoutMs), 120_000);
+  }
+
+  if (typeof raw.workspaceServiceUrl === 'string' && raw.workspaceServiceUrl.length > 0) {
+    settings.workspaceServiceUrl = raw.workspaceServiceUrl;
+  }
+
+  if (typeof raw.tenantId === 'string' && raw.tenantId.length > 0) {
+    settings.tenantId = raw.tenantId;
+  }
+
+  if (typeof raw.userId === 'string' && raw.userId.length > 0) {
+    settings.userId = raw.userId;
+  }
+
+  return settings;
+}
+
 /**
  * Persists application settings as a JSON file in the user data directory.
  */
@@ -25,7 +66,8 @@ export class SettingsStore {
 
   /** Update settings (partial merge) and persist to disk */
   update(partial: Partial<AppSettings>): AppSettings {
-    this.settings = { ...this.settings, ...partial };
+    const merged = { ...this.settings, ...partial };
+    this.settings = validateSettings(merged as Record<string, unknown>);
     this.save();
     return this.get();
   }
@@ -42,7 +84,7 @@ export class SettingsStore {
       const raw = readFileSync(this.filePath, 'utf8');
       const parsed: unknown = JSON.parse(raw);
       if (typeof parsed === 'object' && parsed !== null) {
-        return { ...DEFAULT_SETTINGS, ...(parsed as Partial<AppSettings>) };
+        return validateSettings(parsed as Record<string, unknown>);
       }
     } catch {
       // File doesn't exist or is invalid — use defaults

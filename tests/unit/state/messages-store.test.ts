@@ -113,4 +113,77 @@ describe('useMessagesStore', () => {
     useMessagesStore.getState().clear();
     expect(useMessagesStore.getState().messages).toEqual([]);
   });
+
+  // --- Edge case tests ---
+
+  it('adds tool call when no assistant message exists', () => {
+    // Tool requested before any text chunk — should create an assistant message
+    useMessagesStore.getState().addToolCall({
+      id: 'tc-1',
+      toolName: 'Shell.Exec',
+      status: 'running',
+    });
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.role).toBe('assistant');
+    expect(messages[0]?.isStreaming).toBe(true);
+    expect(messages[0]?.toolCalls).toHaveLength(1);
+  });
+
+  it('updateToolCall ignores unknown tool call ID', () => {
+    useMessagesStore.getState().appendTextChunk('test');
+    useMessagesStore
+      .getState()
+      .addToolCall({ id: 'tc-1', toolName: 'ReadFile', status: 'running' });
+
+    // Update with unknown ID — should be a no-op
+    useMessagesStore.getState().updateToolCall('tc-nonexistent', { status: 'completed' });
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages[0]?.toolCalls?.[0]?.status).toBe('running');
+  });
+
+  it('loadHistory resets message counter', () => {
+    // Generate some messages to advance the counter
+    useMessagesStore.getState().addUserMessage('msg1');
+    useMessagesStore.getState().addUserMessage('msg2');
+
+    // Load history resets counter
+    useMessagesStore
+      .getState()
+      .loadHistory([{ id: 'h-1', role: 'user', content: 'Hi', timestamp: '2026-01-01' }]);
+
+    // New message should start from msg-1 again
+    useMessagesStore.getState().addUserMessage('after history');
+    const messages = useMessagesStore.getState().messages;
+    expect(messages).toHaveLength(2);
+    expect(messages[1]?.id).toBe('msg-1');
+  });
+
+  it('finishStreaming is a no-op when no streaming message exists', () => {
+    useMessagesStore.getState().addUserMessage('user msg');
+    useMessagesStore.getState().finishStreaming();
+
+    // Should not crash or modify anything
+    const messages = useMessagesStore.getState().messages;
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.role).toBe('user');
+  });
+
+  it('handles multiple tool calls on one assistant message', () => {
+    useMessagesStore.getState().appendTextChunk('Let me check...');
+    useMessagesStore
+      .getState()
+      .addToolCall({ id: 'tc-1', toolName: 'ReadFile', status: 'running' });
+    useMessagesStore
+      .getState()
+      .addToolCall({ id: 'tc-2', toolName: 'Shell.Exec', status: 'running' });
+    useMessagesStore.getState().updateToolCall('tc-1', { status: 'completed', result: 'done' });
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages[0]?.toolCalls).toHaveLength(2);
+    expect(messages[0]?.toolCalls?.[0]?.status).toBe('completed');
+    expect(messages[0]?.toolCalls?.[1]?.status).toBe('running');
+  });
 });

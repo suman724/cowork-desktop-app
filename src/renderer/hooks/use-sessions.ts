@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import type { IpcResponse, SessionSummary } from '../../shared/types';
 import { useHistoryStore } from '../state/history-store';
 
 interface UseSessions {
@@ -14,16 +13,21 @@ export function useSessions(): UseSessions {
   const fetchSessions = useCallback(
     async (workspaceId: string) => {
       setLoadingSessions(true);
+      setError(null);
 
-      const result: IpcResponse<unknown> = await window.coworkIPC.listSessions({ workspaceId });
+      try {
+        const result = await window.coworkIPC.listSessions({ workspaceId });
 
-      if (result.success) {
-        setSessions(result.data as SessionSummary[]);
-      } else {
-        setError(result.error.message);
+        if (result.success) {
+          setSessions(result.data);
+        } else {
+          setError(result.error.message);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load sessions');
+      } finally {
+        setLoadingSessions(false);
       }
-
-      setLoadingSessions(false);
     },
     [setSessions, setLoadingSessions, setError],
   );
