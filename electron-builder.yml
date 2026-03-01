@@ -1,0 +1,49 @@
+appId: com.cowork.desktop
+productName: Cowork
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**/*
+  - "!out/**/*.map"
+  - node_modules/@cowork/platform/generated/typescript/**/*
+  - node_modules/@cowork/platform/package.json
+  - "!node_modules/@cowork/platform/.venv"
+  - "!node_modules/@cowork/platform/.venv/**/*"
+  - "!node_modules/@cowork/platform/generated/python"
+  - "!node_modules/@cowork/platform/generated/python/**/*"
+  - "!node_modules/@cowork/platform/contracts"
+  - "!node_modules/@cowork/platform/contracts/**/*"
+  - "!node_modules/@cowork/platform/sdk/python"
+  - "!node_modules/@cowork/platform/sdk/python/**/*"
+  - "!node_modules/@cowork/platform/tests"
+  - "!node_modules/@cowork/platform/tests/**/*"
+  - "!node_modules/@cowork/platform/scripts"
+  - "!node_modules/@cowork/platform/scripts/**/*"
+  - "!node_modules/@cowork/platform/*.md"
+  - "!node_modules/@cowork/platform/Makefile"
+  - "!node_modules/@cowork/platform/pyproject.toml"
+  - "!node_modules/@cowork/platform/.github"
+extraResources:
+  - from: resources/
+    to: resources/
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  hardenedRuntime: true
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  category: Development

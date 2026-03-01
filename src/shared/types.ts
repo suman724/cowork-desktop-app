@@ -1,0 +1,122 @@
+import type {
+  ApprovalRequest,
+  ConversationMessage,
+  PolicyBundle,
+  Session,
+  Workspace,
+} from '@cowork/platform';
+
+/** Agent runtime process status */
+export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed';
+
+/** Session state as seen by the desktop app */
+export interface SessionState {
+  session: Session;
+  policyBundle: PolicyBundle;
+  workspaceId: string;
+}
+
+/** Task execution state */
+export interface TaskState {
+  taskId: string;
+  sessionId: string;
+  prompt: string;
+  currentStep: number;
+  maxSteps: number;
+  isRunning: boolean;
+}
+
+/** A single file diff in a patch preview */
+export interface FileDiff {
+  filePath: string;
+  status: 'added' | 'modified' | 'deleted';
+  hunks: string;
+}
+
+/** Patch preview for the diff viewer */
+export interface PatchPreview {
+  taskId: string;
+  files: FileDiff[];
+}
+
+/** Application settings persisted to disk */
+export interface AppSettings {
+  approvalMode: 'always' | 'on_risky_actions' | 'never';
+  maxStepsPerTask: number;
+  theme: 'light' | 'dark' | 'system';
+  workspaceServiceUrl: string;
+  networkTimeoutMs: number;
+  tenantId?: string;
+  userId?: string;
+}
+
+/** Default settings */
+export const DEFAULT_SETTINGS: AppSettings = {
+  approvalMode: 'on_risky_actions',
+  maxStepsPerTask: 40,
+  theme: 'system',
+  workspaceServiceUrl: 'http://localhost:8003',
+  networkTimeoutMs: 30_000,
+  tenantId: 'dev-tenant',
+  userId: 'dev-user',
+};
+
+/** All navigable views */
+export type ViewName = 'history' | 'conversation' | 'patch' | 'settings';
+
+/** Wrapper for IPC results — never throws across the bridge */
+export type IpcResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: { code: string; message: string; details?: Record<string, unknown> } };
+
+/** Message as displayed in the UI (extends the contract type with UI state) */
+export interface DisplayMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string;
+  timestamp: string;
+  toolCalls?: ToolCallInfo[];
+  isStreaming?: boolean;
+}
+
+/** Tool call display info */
+export interface ToolCallInfo {
+  id: string;
+  toolName: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  arguments?: Record<string, unknown>;
+  result?: string;
+  error?: string;
+}
+
+/** Session event received from agent runtime via JSON-RPC notification */
+export interface SessionEvent {
+  eventType: string;
+  sessionId: string;
+  taskId?: string;
+  stepId?: string;
+  payload: Record<string, unknown>;
+}
+
+/** History types for workspace/session browsing */
+export interface WorkspaceSummary {
+  workspace: Workspace;
+  sessionCount: number;
+  lastActiveAt: string;
+}
+
+/** Session summary as returned by GET /workspaces/{workspaceId}/sessions */
+export interface SessionSummary {
+  sessionId: string;
+  createdAt: string;
+  lastTaskAt: string;
+  taskCount: number;
+}
+
+/** Paginated response from the workspace sessions endpoint */
+export interface ListSessionsResponse {
+  sessions: SessionSummary[];
+  nextToken?: string;
+}
+
+export type { ApprovalRequest, ConversationMessage, PolicyBundle, Session, Workspace };
