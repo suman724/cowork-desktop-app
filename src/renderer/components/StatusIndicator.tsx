@@ -11,6 +11,7 @@ const STATUS_COLORS: Record<AgentRuntimeStatus, string> = {
   starting: 'bg-yellow-500 animate-pulse',
   running: 'bg-green-500',
   crashed: 'bg-red-500',
+  reconnecting: 'bg-yellow-500 animate-pulse',
 };
 
 const STATUS_LABELS: Record<AgentRuntimeStatus, string> = {
@@ -18,6 +19,7 @@ const STATUS_LABELS: Record<AgentRuntimeStatus, string> = {
   starting: 'Starting...',
   running: 'Running',
   crashed: 'Crashed',
+  reconnecting: 'Reconnecting...',
 };
 
 export function StatusIndicator({ status, className }: StatusIndicatorProps): React.JSX.Element {

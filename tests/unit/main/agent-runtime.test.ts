@@ -134,7 +134,7 @@ describe('AgentRuntimeManager', () => {
 
   // --- Crash detection ---
 
-  it('detects crash when child exits unexpectedly', () => {
+  it('detects crash when child exits unexpectedly and attempts auto-restart', () => {
     manager.start();
     mockWindow.webContents.send.mockClear();
 
@@ -142,7 +142,8 @@ describe('AgentRuntimeManager', () => {
     mockChild.exitCode = 1;
     mockChild.emit('exit', 1, null);
 
-    expect(manager.getStatus()).toBe('crashed');
+    // With auto-restart, status transitions to 'reconnecting' instead of 'crashed'
+    expect(manager.getStatus()).toBe('reconnecting');
     expect(manager.getClient()).toBeNull();
     expect(mockWindow.webContents.send).toHaveBeenCalledWith(IPC_EVENTS.RUNTIME_CRASHED, {
       code: 1,
@@ -238,5 +239,107 @@ describe('AgentRuntimeManager', () => {
       (c: unknown[]) => c[0] === IPC_EVENTS.SESSION_EVENT,
     );
     expect(sessionEventCalls).toHaveLength(0);
+  });
+
+  // --- Auto-restart ---
+
+  it('auto-restarts after unexpected crash', async () => {
+    vi.useFakeTimers();
+
+    manager.start();
+    mockWindow.webContents.send.mockClear();
+
+    // Simulate unexpected exit
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+
+    // Should transition to 'reconnecting' (not 'crashed')
+    expect(manager.getStatus()).toBe('reconnecting');
+
+    // Create a fresh mock child for the restart
+    mockChild = createMockChild();
+    mockSpawn.mockReturnValue(mockChild);
+
+    // Wait for the restart timer (base delay is 1s)
+    await vi.advanceTimersByTimeAsync(1_100);
+
+    expect(manager.getStatus()).toBe('running');
+    expect(mockSpawn).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+
+  it('detects crash loop after max restart attempts', async () => {
+    vi.useFakeTimers();
+
+    // First crash + restart
+    manager.start();
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+    expect(manager.getStatus()).toBe('reconnecting');
+
+    // Restart attempt 1
+    mockChild = createMockChild();
+    mockSpawn.mockReturnValue(mockChild);
+    await vi.advanceTimersByTimeAsync(1_100);
+    expect(manager.getStatus()).toBe('running');
+
+    // Second crash + restart
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+    expect(manager.getStatus()).toBe('reconnecting');
+
+    mockChild = createMockChild();
+    mockSpawn.mockReturnValue(mockChild);
+    await vi.advanceTimersByTimeAsync(2_100);
+    expect(manager.getStatus()).toBe('running');
+
+    // Third crash + restart
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+    expect(manager.getStatus()).toBe('reconnecting');
+
+    mockChild = createMockChild();
+    mockSpawn.mockReturnValue(mockChild);
+    await vi.advanceTimersByTimeAsync(4_100);
+    expect(manager.getStatus()).toBe('running');
+
+    // Fourth crash — should be crash loop
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+    expect(manager.getStatus()).toBe('crashed');
+
+    vi.useRealTimers();
+  });
+
+  it('shutdown cancels pending restart timer', async () => {
+    manager.start();
+    mockWindow.webContents.send.mockClear();
+
+    // Simulate crash → reconnecting
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+    expect(manager.getStatus()).toBe('reconnecting');
+
+    // Shutdown should cancel the pending restart and go to 'stopped'
+    await manager.shutdown();
+    expect(manager.getStatus()).toBe('stopped');
+  });
+
+  it('successful start after crash resets from reconnecting', async () => {
+    vi.useFakeTimers();
+
+    manager.start();
+    mockChild.exitCode = 1;
+    mockChild.emit('exit', 1, null);
+    expect(manager.getStatus()).toBe('reconnecting');
+
+    // Restart succeeds
+    mockChild = createMockChild();
+    mockSpawn.mockReturnValue(mockChild);
+    await vi.advanceTimersByTimeAsync(1_100);
+    expect(manager.getStatus()).toBe('running');
+
+    vi.useRealTimers();
   });
 });

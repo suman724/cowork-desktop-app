@@ -30,7 +30,10 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
         <div className="text-sm break-words whitespace-pre-wrap">
           {message.content}
           {message.isStreaming && (
-            <span className="bg-foreground ml-0.5 inline-block h-4 w-1 animate-pulse" />
+            <span
+              className="bg-primary/80 ml-0.5 inline-block h-4 w-[3px] animate-pulse rounded-sm"
+              aria-hidden="true"
+            />
           )}
         </div>
 

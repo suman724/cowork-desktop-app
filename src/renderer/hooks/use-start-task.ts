@@ -27,6 +27,21 @@ async function ensureRuntimeSession(): Promise<string | null> {
     return useSessionStore.getState().sessionState?.sessionId ?? null;
   }
 
+  // If runtime is reconnecting, wait up to 5s for it to become running
+  if (runtimeStatus === 'reconnecting') {
+    const MAX_WAIT_MS = 5_000;
+    const POLL_MS = 500;
+    const start = Date.now();
+    while (Date.now() - start < MAX_WAIT_MS) {
+      await new Promise((r) => setTimeout(r, POLL_MS));
+      if (useSessionStore.getState().agentRuntimeStatus === 'running') {
+        return useSessionStore.getState().sessionState?.sessionId ?? null;
+      }
+    }
+    // Timed out waiting for reconnect
+    return null;
+  }
+
   // Runtime is stopped/crashed — create a fresh session
   const settings = useUIStore.getState().settings;
   const workspacePath = useSessionStore.getState().workspacePath;

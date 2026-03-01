@@ -1,7 +1,7 @@
 import type { ApprovalRequest, ConversationMessage, Workspace } from '@cowork/platform';
 
 /** Agent runtime process status */
-export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed';
+export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed' | 'reconnecting';
 
 /** Session state as seen by the desktop app (matches CreateSession JSON-RPC response) */
 export interface SessionState {
