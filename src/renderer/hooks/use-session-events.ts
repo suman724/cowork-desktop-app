@@ -23,6 +23,7 @@ const EVENT_TYPE = {
   POLICY_EXPIRED: 'policy_expired',
   TASK_COMPLETED: 'task_completed',
   TASK_FAILED: 'task_failed',
+  LLM_RETRY: 'llm_retry',
 } as const;
 
 /**
@@ -197,6 +198,13 @@ export function useSessionEvents(): void {
           const message = typeof p.message === 'string' ? p.message : 'Task failed';
           setError(message);
           addSystemMessage(`Error: ${message}`);
+          break;
+        }
+
+        case EVENT_TYPE.LLM_RETRY: {
+          const attempt = typeof p.attempt === 'number' ? p.attempt : 0;
+          const maxRetries = typeof p.maxRetries === 'number' ? p.maxRetries : 0;
+          addSystemMessage(`Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`);
           break;
         }
 
