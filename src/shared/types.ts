@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   approvalMode: 'on_risky_actions',
   maxStepsPerTask: 40,
   theme: 'system',
-  workspaceServiceUrl: 'http://localhost:8003',
+  workspaceServiceUrl: 'http://localhost:8002',
   networkTimeoutMs: 30_000,
   tenantId: 'dev-tenant',
   userId: 'dev-user',

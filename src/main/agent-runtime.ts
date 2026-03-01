@@ -54,7 +54,7 @@ export class AgentRuntimeManager {
 
     let child: ChildProcess;
     try {
-      child = spawn(binaryPath, ['--mode', 'stdio'], {
+      child = spawn(binaryPath, [], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env },
       });

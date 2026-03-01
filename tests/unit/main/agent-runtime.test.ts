@@ -104,7 +104,7 @@ describe('AgentRuntimeManager', () => {
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
-      ['--mode', 'stdio'],
+      [],
       expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] }),
     );
     expect(manager.getStatus()).toBe('running');

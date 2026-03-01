@@ -28,7 +28,7 @@ test-e2e: ## Run Playwright E2E tests
 	npx playwright test
 
 dev: ## Start in development mode (hot reload)
-	npx electron-vite dev
+	set -a && [ -f .env ] && . .env; set +a && npx electron-vite dev
 
 build: ## Build distributable (electron-builder)
 	npx electron-vite build && npx electron-builder --config electron-builder.yml

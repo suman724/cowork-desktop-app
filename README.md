@@ -51,7 +51,7 @@ Copy `.env.example` to `.env` and configure:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `WORKSPACE_SERVICE_URL` | `http://localhost:8003` | Workspace Service URL for history browsing |
+| `WORKSPACE_SERVICE_URL` | `http://localhost:8002` | Workspace Service URL for history browsing |
 | `TENANT_ID` | `dev-tenant` | Default tenant ID for local development |
 | `USER_ID` | `dev-user` | Default user ID for local development |
 | `AGENT_RUNTIME_PATH` | (auto-detected) | Override path to agent-runtime binary |

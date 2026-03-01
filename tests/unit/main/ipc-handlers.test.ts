@@ -74,14 +74,14 @@ describe('registerIpcHandlers', () => {
         theme: 'system',
         approvalMode: 'on_risky_actions',
         maxStepsPerTask: 40,
-        workspaceServiceUrl: 'http://localhost:8003',
+        workspaceServiceUrl: 'http://localhost:8002',
         networkTimeoutMs: 30000,
       }),
       update: vi.fn().mockReturnValue({
         theme: 'system',
         approvalMode: 'on_risky_actions',
         maxStepsPerTask: 40,
-        workspaceServiceUrl: 'http://localhost:8003',
+        workspaceServiceUrl: 'http://localhost:8002',
         networkTimeoutMs: 30000,
       }),
     };

@@ -13,7 +13,7 @@ interface WorkspaceServiceConfig {
 }
 
 const DEFAULT_CONFIG: WorkspaceServiceConfig = {
-  baseUrl: 'http://localhost:8003',
+  baseUrl: 'http://localhost:8002',
   timeoutMs: 30_000,
   maxRetries: 3,
 };

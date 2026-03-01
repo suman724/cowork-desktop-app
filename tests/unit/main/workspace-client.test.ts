@@ -7,7 +7,7 @@ describe('WorkspaceServiceClient', () => {
 
   beforeEach(() => {
     client = new WorkspaceServiceClient({
-      baseUrl: 'http://localhost:8003',
+      baseUrl: 'http://localhost:8002',
       timeoutMs: 5000,
       maxRetries: 2,
     });
@@ -29,7 +29,7 @@ describe('WorkspaceServiceClient', () => {
 
     expect(result).toEqual(mockWorkspaces);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:8003/workspaces?tenantId=t-1&userId=u-1',
+      'http://localhost:8002/workspaces?tenantId=t-1&userId=u-1',
       expect.objectContaining({ headers: { Accept: 'application/json' } }),
     );
   });
@@ -47,7 +47,7 @@ describe('WorkspaceServiceClient', () => {
 
     expect(result).toEqual(mockSessions);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:8003/workspaces/ws-1/sessions?limit=100',
+      'http://localhost:8002/workspaces/ws-1/sessions?limit=100',
       expect.any(Object),
     );
   });
@@ -63,7 +63,7 @@ describe('WorkspaceServiceClient', () => {
 
     expect(result).toEqual(mockMessages);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:8003/workspaces/ws-1/sessions/sess-1/history',
+      'http://localhost:8002/workspaces/ws-1/sessions/sess-1/history',
       expect.any(Object),
     );
   });
