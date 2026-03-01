@@ -20,7 +20,7 @@ jobs:
 
       - name: Install cowork-platform
         run: |
-          git clone https://github.com/org/cowork-platform.git ../cowork-platform
+          git clone https://github.com/suman724/cowork-platform.git ../cowork-platform
           cd ../cowork-platform && npm install
 
       - name: Install dependencies
