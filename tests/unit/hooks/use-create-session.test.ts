@@ -28,7 +28,7 @@ describe('useCreateSession', () => {
   });
 
   it('creates session successfully', async () => {
-    const mockSession = { session: { sessionId: 's-1' }, policyBundle: {}, workspaceId: 'ws-1' };
+    const mockSession = { sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' };
     mockCreateSession.mockResolvedValue({ success: true, data: mockSession });
 
     const { result } = renderHook(() => useCreateSession());

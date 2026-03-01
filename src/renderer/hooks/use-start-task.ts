@@ -37,7 +37,7 @@ export function useStartTask(): UseStartTask {
 
       setTaskState({
         taskId,
-        sessionId: sessionState.session.sessionId,
+        sessionId: sessionState.sessionId,
         prompt,
         currentStep: 0,
         maxSteps: settings.maxStepsPerTask,
@@ -46,7 +46,7 @@ export function useStartTask(): UseStartTask {
 
       try {
         const result = await window.coworkIPC.startTask({
-          sessionId: sessionState.session.sessionId,
+          sessionId: sessionState.sessionId,
           taskId,
           prompt,
           taskOptions: {

@@ -6,6 +6,7 @@ import { Separator } from '../../components/ui/separator';
 import { useHistoryStore } from '../../state/history-store';
 import { useUIStore } from '../../state/ui-store';
 import { useMessagesStore } from '../../state/messages-store';
+import { useSessionStore } from '../../state/session-store';
 import type { DisplayMessage } from '../../../shared/types';
 
 export function HistoryView(): React.JSX.Element {
@@ -68,6 +69,13 @@ export function HistoryView(): React.JSX.Element {
   }, [selectedWorkspaceId, setSessions, setLoadingSessions, setError]);
 
   const handleNewChat = useCallback(() => {
+    // Pass the selected workspace's localPath so the new session
+    // is associated with the same workspace (local-scoped).
+    const { selectedWorkspaceId, workspaces } = useHistoryStore.getState();
+    const selectedWorkspace = workspaces.find((w) => w.workspaceId === selectedWorkspaceId);
+    const localPath = selectedWorkspace?.localPath ?? null;
+    useSessionStore.getState().setWorkspacePath(localPath);
+    useSessionStore.getState().setSessionState(null);
     useMessagesStore.getState().clear();
     setView('conversation');
   }, [setView]);

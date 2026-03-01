@@ -25,7 +25,7 @@ export function useCancelTask(): UseCancelTask {
 
     try {
       const result = await window.coworkIPC.cancelTask({
-        sessionId: sessionState.session.sessionId,
+        sessionId: sessionState.sessionId,
         taskId: taskState.taskId,
       });
 
