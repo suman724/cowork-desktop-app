@@ -6,7 +6,69 @@ interface MessageItemProps {
   message: DisplayMessage;
 }
 
+/** Parse a tool role message's JSON content for display. */
+function parseToolContent(content: string): {
+  type: string;
+  toolName: string;
+  detail: string;
+} | null {
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const obj = parsed as Record<string, unknown>;
+    const type = typeof obj.type === 'string' ? obj.type : '';
+    const toolName = typeof obj.toolName === 'string' ? obj.toolName : 'Unknown';
+    let detail = '';
+    if (type === 'tool_call') {
+      detail = typeof obj.arguments === 'string' ? obj.arguments : JSON.stringify(obj.arguments);
+    } else if (type === 'tool_result') {
+      const output = typeof obj.output === 'string' ? obj.output : JSON.stringify(obj.output);
+      detail = output.length > 500 ? output.slice(0, 500) + '...' : output;
+    }
+    return { type, toolName, detail };
+  } catch {
+    return null;
+  }
+}
+
 export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
+  // Render tool messages as styled cards
+  if (message.role === 'tool') {
+    const parsed = parseToolContent(message.content);
+    if (parsed) {
+      const isCall = parsed.type === 'tool_call';
+      return (
+        <div className="flex gap-3 px-4 py-1.5" data-testid="tool-message">
+          <div className="w-7 shrink-0" />
+          <div
+            className={cn(
+              'min-w-0 flex-1 rounded-md border px-3 py-2 text-xs',
+              'bg-muted/40',
+            )}
+          >
+            <div className="text-muted-foreground mb-1 font-medium">
+              {isCall ? 'Tool Call' : 'Tool Result'}: {parsed.toolName}
+            </div>
+            {parsed.detail && (
+              <pre className="text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px]">
+                {parsed.detail}
+              </pre>
+            )}
+          </div>
+        </div>
+      );
+    }
+    // Fallback: render as plain text
+    return (
+      <div className="flex gap-3 px-4 py-1.5" data-testid="tool-message-fallback">
+        <div className="w-7 shrink-0" />
+        <div className="text-muted-foreground min-w-0 flex-1 text-xs break-words whitespace-pre-wrap">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

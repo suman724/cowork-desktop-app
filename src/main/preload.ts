@@ -23,7 +23,7 @@ export interface CoworkIPC {
   createSession: (params: {
     tenantId: string;
     userId: string;
-    workspaceHint?: { localPaths?: string[] };
+    workspaceHint?: { localPaths?: string[]; workspaceId?: string };
   }) => Promise<IpcResponse<SessionState>>;
 
   getSessionState: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;

@@ -96,6 +96,8 @@ export function Sidebar(): React.JSX.Element {
         });
         // Clear task state — this is a historical session, not a running task
         useSessionStore.getState().setTaskState(null);
+        // Mark as viewing history (enables "Continue" button in ConversationView)
+        useSessionStore.getState().setViewingHistory(true);
         // Clear previous messages before loading history
         useMessagesStore.getState().clear();
 
