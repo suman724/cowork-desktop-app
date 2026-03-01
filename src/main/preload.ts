@@ -76,6 +76,12 @@ export interface CoworkIPC {
   getRuntimeStatus: () => Promise<IpcResponse<AgentRuntimeStatus>>;
   shutdownRuntime: () => Promise<IpcResponse<void>>;
 
+  // Log folder
+  openLogFolder: (logDir: string) => Promise<IpcResponse<void>>;
+
+  // Folder picker
+  selectFolder: () => Promise<IpcResponse<string | null>>;
+
   // App info
   getVersion: () => Promise<IpcResponse<string>>;
 
@@ -115,6 +121,12 @@ const coworkIPC: CoworkIPC = {
   // Runtime
   getRuntimeStatus: () => ipcRenderer.invoke(IPC_CHANNELS.RUNTIME_STATUS),
   shutdownRuntime: () => ipcRenderer.invoke(IPC_CHANNELS.RUNTIME_SHUTDOWN),
+
+  // Log folder
+  openLogFolder: (logDir) => ipcRenderer.invoke(IPC_CHANNELS.RUNTIME_OPEN_LOG_FOLDER, logDir),
+
+  // Folder picker
+  selectFolder: () => ipcRenderer.invoke(IPC_CHANNELS.FOLDER_SELECT),
 
   // App
   getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_VERSION),

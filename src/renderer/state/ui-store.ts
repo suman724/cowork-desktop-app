@@ -15,7 +15,7 @@ interface UIStore {
 }
 
 export const useUIStore = create<UIStore>((set) => ({
-  view: 'history',
+  view: 'home',
   theme: DEFAULT_SETTINGS.theme,
   settings: DEFAULT_SETTINGS,
   patchPreview: null,

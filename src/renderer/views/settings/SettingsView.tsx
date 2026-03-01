@@ -11,11 +11,13 @@ import {
 import { Input } from '../../components/ui/input';
 import { Separator } from '../../components/ui/separator';
 import { useUIStore } from '../../state/ui-store';
+import { useSessionStore } from '../../state/session-store';
 import { useSettings } from '../../hooks/use-settings';
 import type { AppSettings } from '../../../shared/types';
 
 export function SettingsView(): React.JSX.Element {
   const setView = useUIStore((s) => s.setView);
+  const logDir = useSessionStore((s) => s.sessionState?.logDir);
   const { settings, updateSetting, error } = useSettings();
 
   // Local state for numeric inputs — only commit on blur
@@ -45,7 +47,7 @@ export function SettingsView(): React.JSX.Element {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b px-4 py-2">
         <h1 className="text-sm font-semibold">Settings</h1>
-        <Button variant="ghost" size="sm" onClick={() => setView('history')}>
+        <Button variant="ghost" size="sm" onClick={() => setView('home')}>
           Back
         </Button>
       </div>
@@ -131,6 +133,23 @@ export function SettingsView(): React.JSX.Element {
               }}
             />
           </div>
+
+          {logDir && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <Label>Diagnostics</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void window.coworkIPC.openLogFolder(logDir)}
+                  data-testid="open-log-folder"
+                >
+                  Open Log Folder
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ describe('useCreateSession', () => {
     vi.clearAllMocks();
     useSessionStore.getState().reset();
     useMessagesStore.getState().clear();
-    useUIStore.getState().setView('history');
+    useUIStore.getState().setView('home');
   });
 
   it('starts with isLoading=false and error=null', () => {

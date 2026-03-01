@@ -92,7 +92,7 @@ describe('SettingsView', () => {
 
     fireEvent.click(screen.getByText('Back'));
 
-    expect(useUIStore.getState().view).toBe('history');
+    expect(useUIStore.getState().view).toBe('home');
   });
 
   it('shows error when IPC fails', async () => {

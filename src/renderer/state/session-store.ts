@@ -40,5 +40,11 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setError: (error) => set({ error }),
   setWorkspacePath: (workspacePath) => set({ workspacePath }),
   reset: () =>
-    set({ sessionState: null, taskState: null, agentRuntimeStatus: 'stopped', error: null, workspacePath: null }),
+    set({
+      sessionState: null,
+      taskState: null,
+      agentRuntimeStatus: 'stopped',
+      error: null,
+      workspacePath: null,
+    }),
 }));
