@@ -140,11 +140,7 @@ export function useSessionEvents(): void {
           if (toolCallId) {
             updateToolCall(toolCallId, {
               status:
-                p.status === 'failed'
-                  ? 'failed'
-                  : p.status === 'denied'
-                    ? 'denied'
-                    : 'completed',
+                p.status === 'failed' ? 'failed' : p.status === 'denied' ? 'denied' : 'completed',
               result: typeof p.result === 'string' ? p.result : undefined,
               error: typeof p.error === 'string' ? p.error : undefined,
             });
