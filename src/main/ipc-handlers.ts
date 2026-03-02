@@ -90,6 +90,22 @@ export function registerIpcHandlers(
     },
   );
 
+  ipcMain.handle(IPC_CHANNELS.SESSION_RESUME, async (_event, params: { sessionId: string }) => {
+    try {
+      // Ensure runtime is started
+      if (runtime.getStatus() !== 'running') {
+        runtime.start();
+      }
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime is not running');
+
+      const result = await client.request('ResumeSession', { sessionId: params.sessionId }, 60_000);
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
+
   ipcMain.handle(IPC_CHANNELS.SESSION_GET_STATE, async (_event, params: { sessionId: string }) => {
     try {
       const client = runtime.getClient();

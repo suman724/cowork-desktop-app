@@ -26,6 +26,8 @@ export interface CoworkIPC {
     workspaceHint?: { localPaths?: string[]; workspaceId?: string };
   }) => Promise<IpcResponse<SessionState>>;
 
+  resumeSession: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
+
   getSessionState: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
 
   // Task control
@@ -96,6 +98,7 @@ export interface CoworkIPC {
 const coworkIPC: CoworkIPC = {
   // Session lifecycle
   createSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CREATE, params),
+  resumeSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_RESUME, params),
   getSessionState: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET_STATE, params),
 
   // Task control
