@@ -48,7 +48,7 @@ export function registerIpcHandlers(
       params: {
         tenantId: string;
         userId: string;
-        workspaceHint?: { localPaths?: string[] };
+        workspaceHint?: { localPaths?: string[]; workspaceId?: string };
       },
     ) => {
       try {
