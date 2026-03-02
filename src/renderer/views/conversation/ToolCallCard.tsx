@@ -13,6 +13,7 @@ const STATUS_VARIANT: Record<
   running: 'secondary',
   completed: 'default',
   failed: 'destructive',
+  denied: 'destructive',
 };
 
 const STATUS_LABEL: Record<ToolCallInfo['status'], string> = {
@@ -20,6 +21,7 @@ const STATUS_LABEL: Record<ToolCallInfo['status'], string> = {
   running: 'Running',
   completed: 'Completed',
   failed: 'Failed',
+  denied: 'Denied',
 };
 
 export function ToolCallCard({ toolCall }: ToolCallCardProps): React.JSX.Element {

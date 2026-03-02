@@ -78,7 +78,7 @@ export interface DisplayMessage {
 export interface ToolCallInfo {
   id: string;
   toolName: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'denied';
   arguments?: Record<string, unknown>;
   result?: string;
   error?: string;

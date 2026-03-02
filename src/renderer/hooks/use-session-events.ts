@@ -139,7 +139,8 @@ export function useSessionEvents(): void {
           const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
           if (toolCallId) {
             updateToolCall(toolCallId, {
-              status: p.status === 'failed' ? 'failed' : 'completed',
+              status:
+                p.status === 'failed' ? 'failed' : p.status === 'denied' ? 'denied' : 'completed',
               result: typeof p.result === 'string' ? p.result : undefined,
               error: typeof p.error === 'string' ? p.error : undefined,
             });

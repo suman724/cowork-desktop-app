@@ -37,4 +37,20 @@ describe('ToolCallCard', () => {
 
     expect(screen.getByText('Pending')).toBeInTheDocument();
   });
+
+  it('shows denied status with error', () => {
+    render(
+      <ToolCallCard
+        toolCall={{
+          id: 'tc-1',
+          toolName: 'Shell',
+          status: 'denied',
+          error: 'Capability denied by policy',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Denied')).toBeInTheDocument();
+    expect(screen.getByText('Capability denied by policy')).toBeInTheDocument();
+  });
 });
