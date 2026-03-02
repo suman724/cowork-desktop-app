@@ -131,7 +131,7 @@ make clean             # Remove build artifacts
 
 ## Key Features
 
-- **Session Continuation**: When viewing a historical session, a "Continue Conversation" button creates a new session in the same workspace so users can resume working in context
+- **Session Continuation**: When viewing a historical session, a "Continue Conversation" button resumes the same session (reusing the session ID) so users can continue the conversation with full history
 - **Tool Call Display**: Historical tool call/result messages render as styled cards showing tool name, arguments, and output (with graceful JSON fallback)
 - **Step Counter**: `GetSessionState` returns `currentStep` and `maxSteps` for tracking agent progress
 
@@ -140,7 +140,7 @@ make clean             # Remove build artifacts
 The app has two external communication paths:
 
 1. **Agent Runtime** (JSON-RPC 2.0 over stdio) — active session/task control
-   - Methods: `CreateSession`, `StartTask` (with `taskOptions.maxSteps`), `CancelTask`, `GetSessionState`, `ApproveAction`, `GetPatchPreview`, `Shutdown`
+   - Methods: `CreateSession`, `ResumeSession`, `StartTask` (with `taskOptions.maxSteps`), `CancelTask`, `GetSessionState`, `ApproveAction`, `GetPatchPreview`, `Shutdown`
    - Notifications: `SessionEvent` with event types (`text_chunk`, `tool_requested`, `tool_completed`, `approval_requested`, `step_limit_approaching`, etc.)
 
 2. **Workspace Service** (HTTPS REST) — historical data browsing, independent of agent-runtime

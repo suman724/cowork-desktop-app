@@ -5,6 +5,7 @@
 export const IPC_CHANNELS = {
   // Session lifecycle
   SESSION_CREATE: 'session:create',
+  SESSION_RESUME: 'session:resume',
   SESSION_GET_STATE: 'session:get-state',
 
   // Task control

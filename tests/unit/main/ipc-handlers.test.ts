@@ -163,6 +163,39 @@ describe('registerIpcHandlers', () => {
     );
   });
 
+  it('session:resume starts runtime if stopped and calls ResumeSession', async () => {
+    mockRuntime.getStatus.mockReturnValue('stopped');
+    mockRpcClient.request.mockResolvedValue({ sessionId: 's-1', workspaceId: 'ws-1' });
+
+    const handler = handlers.get(IPC_CHANNELS.SESSION_RESUME)!;
+    const result = await handler({}, { sessionId: 's-1' });
+
+    expect(mockRuntime.start).toHaveBeenCalled();
+    expect(mockRpcClient.request).toHaveBeenCalledWith(
+      'ResumeSession',
+      { sessionId: 's-1' },
+      60000,
+    );
+    expect(result).toEqual({
+      success: true,
+      data: { sessionId: 's-1', workspaceId: 'ws-1' },
+    });
+  });
+
+  it('session:resume returns failure when runtime has no client', async () => {
+    mockRuntime.getClient.mockReturnValue(null);
+
+    const handler = handlers.get(IPC_CHANNELS.SESSION_RESUME)!;
+    const result = await handler({}, { sessionId: 's-1' });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({ code: 'RUNTIME_NOT_AVAILABLE' }),
+      }),
+    );
+  });
+
   // --- Task control ---
 
   it('task:start forwards taskOptions to RPC', async () => {

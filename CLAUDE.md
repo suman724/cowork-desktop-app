@@ -28,7 +28,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 
 **Shared** (`src/shared/`) — Imported by both processes:
 - `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent`, `AppSettings` + re-exports from `@cowork/platform`
-- `ipc-channels.ts` — `IPC_CHANNELS` (14 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
+- `ipc-channels.ts` — `IPC_CHANNELS` (15 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
 
 ## Key Constraints
 
@@ -49,6 +49,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 | Channel | JSON-RPC Method / Action |
 |---------|-------------------------|
 | `session:create` | `CreateSession` (60s timeout) |
+| `session:resume` | `ResumeSession` (60s timeout) |
 | `session:get-state` | `GetSessionState` |
 | `task:start` | `StartTask` |
 | `task:cancel` | `CancelTask` |

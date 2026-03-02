@@ -4,7 +4,6 @@ import { ConversationFooter } from './ConversationFooter';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
 import { useSessionStore } from '../../state/session-store';
-import { useUIStore } from '../../state/ui-store';
 import { useStartTask } from '../../hooks/use-start-task';
 import { useCancelTask } from '../../hooks/use-cancel-task';
 import { Button } from '../../components/ui/button';
@@ -17,8 +16,6 @@ export function ConversationView(): React.JSX.Element {
   const setSessionState = useSessionStore((s) => s.setSessionState);
   const { startTask } = useStartTask();
   const { cancelTask } = useCancelTask();
-  const tenantId = useUIStore((s) => s.settings.tenantId);
-  const userId = useUIStore((s) => s.settings.userId);
 
   const [isContinuing, setIsContinuing] = useState(false);
 
@@ -34,17 +31,13 @@ export function ConversationView(): React.JSX.Element {
   }, [cancelTask]);
 
   const handleContinue = useCallback(() => {
-    if (!sessionState?.workspaceId) return;
-    const workspaceId = sessionState.workspaceId;
+    if (!sessionState?.sessionId) return;
+    const sessionId = sessionState.sessionId;
 
     const continueSession = async (): Promise<void> => {
       setIsContinuing(true);
       try {
-        const result = await window.coworkIPC.createSession({
-          tenantId: tenantId ?? 'dev-tenant',
-          userId: userId ?? 'dev-user',
-          workspaceHint: { workspaceId },
-        });
+        const result = await window.coworkIPC.resumeSession({ sessionId });
         if (result.success) {
           setSessionState(result.data);
           setViewingHistory(false);
@@ -56,7 +49,7 @@ export function ConversationView(): React.JSX.Element {
       }
     };
     void continueSession();
-  }, [sessionState, tenantId, userId, setSessionState, setViewingHistory]);
+  }, [sessionState, setSessionState, setViewingHistory]);
 
   const isTaskRunning = taskState?.isRunning ?? false;
   const showContinueButton = isViewingHistory && !taskState;
