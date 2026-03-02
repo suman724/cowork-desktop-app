@@ -186,4 +186,68 @@ describe('useMessagesStore', () => {
     expect(messages[0]?.toolCalls?.[0]?.status).toBe('completed');
     expect(messages[0]?.toolCalls?.[1]?.status).toBe('running');
   });
+
+  // --- Message cache tests ---
+
+  it('caches messages by sessionId', () => {
+    useMessagesStore.getState().addUserMessage('Hello');
+    useMessagesStore.getState().appendTextChunk('Hi there');
+    useMessagesStore.getState().finishStreaming();
+
+    useMessagesStore.getState().cacheMessages('session-1');
+
+    expect(useMessagesStore.getState().sessionMessageCache['session-1']).toHaveLength(2);
+  });
+
+  it('restores messages from cache', () => {
+    useMessagesStore.getState().addUserMessage('Hello');
+    useMessagesStore.getState().appendTextChunk('Hi there');
+    useMessagesStore.getState().finishStreaming();
+    useMessagesStore.getState().cacheMessages('session-1');
+
+    // Clear and verify empty
+    useMessagesStore.getState().clear();
+    expect(useMessagesStore.getState().messages).toHaveLength(0);
+
+    // Restore from cache
+    const restored = useMessagesStore.getState().restoreFromCache('session-1');
+    expect(restored).toBe(true);
+    expect(useMessagesStore.getState().messages).toHaveLength(2);
+    expect(useMessagesStore.getState().messages[0]?.content).toBe('Hello');
+    expect(useMessagesStore.getState().messages[1]?.content).toBe('Hi there');
+  });
+
+  it('restoreFromCache returns false for unknown sessionId', () => {
+    const restored = useMessagesStore.getState().restoreFromCache('unknown');
+    expect(restored).toBe(false);
+    expect(useMessagesStore.getState().messages).toHaveLength(0);
+  });
+
+  it('clear does not wipe the cache', () => {
+    useMessagesStore.getState().addUserMessage('Hello');
+    useMessagesStore.getState().cacheMessages('session-1');
+    useMessagesStore.getState().clear();
+
+    expect(useMessagesStore.getState().sessionMessageCache['session-1']).toHaveLength(1);
+  });
+
+  it('cacheMessages does nothing when messages are empty', () => {
+    useMessagesStore.getState().cacheMessages('session-empty');
+    expect('session-empty' in useMessagesStore.getState().sessionMessageCache).toBe(false);
+  });
+
+  it('cache overwrites previous entry for same sessionId', () => {
+    useMessagesStore.getState().addUserMessage('First');
+    useMessagesStore.getState().cacheMessages('session-1');
+
+    useMessagesStore.getState().clear();
+    useMessagesStore.getState().addUserMessage('Second');
+    useMessagesStore.getState().addUserMessage('Third');
+    useMessagesStore.getState().cacheMessages('session-1');
+
+    expect(useMessagesStore.getState().sessionMessageCache['session-1']).toHaveLength(2);
+    expect(useMessagesStore.getState().sessionMessageCache['session-1']?.[0]?.content).toBe(
+      'Second',
+    );
+  });
 });

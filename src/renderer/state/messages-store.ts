@@ -4,6 +4,9 @@ import type { DisplayMessage, ToolCallInfo } from '../../shared/types';
 interface MessagesStore {
   messages: DisplayMessage[];
 
+  /** Cache of messages by sessionId — survives clear() */
+  sessionMessageCache: Record<string, DisplayMessage[]>;
+
   /** Append a text chunk to the current streaming assistant message (or create one) */
   appendTextChunk: (text: string) => void;
 
@@ -25,7 +28,13 @@ interface MessagesStore {
   /** Load historical messages */
   loadHistory: (messages: DisplayMessage[]) => void;
 
-  /** Clear all messages */
+  /** Save current messages to cache under a sessionId */
+  cacheMessages: (sessionId: string) => void;
+
+  /** Restore messages from cache. Returns true if cache hit. */
+  restoreFromCache: (sessionId: string) => boolean;
+
+  /** Clear all messages (does NOT clear cache) */
   clear: () => void;
 }
 
@@ -35,8 +44,9 @@ function nextId(): string {
   return `msg-${++messageCounter}`;
 }
 
-export const useMessagesStore = create<MessagesStore>((set) => ({
+export const useMessagesStore = create<MessagesStore>((set, get) => ({
   messages: [],
+  sessionMessageCache: {},
 
   appendTextChunk: (text) =>
     set((state) => {
@@ -148,6 +158,22 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
   loadHistory: (messages) => {
     messageCounter = 0;
     set({ messages });
+  },
+
+  cacheMessages: (sessionId) => {
+    const { messages, sessionMessageCache } = get();
+    if (messages.length > 0) {
+      set({ sessionMessageCache: { ...sessionMessageCache, [sessionId]: [...messages] } });
+    }
+  },
+
+  restoreFromCache: (sessionId) => {
+    const cached = get().sessionMessageCache[sessionId];
+    if (cached && cached.length > 0) {
+      set({ messages: [...cached] });
+      return true;
+    }
+    return false;
   },
 
   clear: () => {

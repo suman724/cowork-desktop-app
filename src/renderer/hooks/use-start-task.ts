@@ -89,6 +89,13 @@ export function useStartTask(): UseStartTask {
           return;
         }
 
+        // Mark this as the live session
+        const currentWsId = useSessionStore.getState().sessionState?.workspaceId;
+        if (currentWsId) {
+          useSessionStore.getState().setLiveSession(sessionId, currentWsId);
+        }
+        useSessionStore.getState().setViewingHistory(false);
+
         const taskId = `task-${Date.now()}`;
         const settings = useUIStore.getState().settings;
         addUserMessage(prompt);

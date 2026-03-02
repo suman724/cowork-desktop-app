@@ -79,27 +79,64 @@ export function Sidebar(): React.JSX.Element {
   }, []);
 
   const handleNewChat = useCallback(() => {
+    // Cache current messages before navigating away
+    const currentSessionId = useSessionStore.getState().sessionState?.sessionId;
+    if (currentSessionId && useMessagesStore.getState().messages.length > 0) {
+      useMessagesStore.getState().cacheMessages(currentSessionId);
+    }
     useSessionStore.getState().setWorkspacePath(null);
     useSessionStore.getState().setSessionState(null);
+    useSessionStore.getState().clearLiveSession();
     useMessagesStore.getState().clear();
     setView('home');
   }, [setView]);
 
   const handleSelectSession = useCallback(
     (workspaceId: string, sessionId: string) => {
-      const load = async (): Promise<void> => {
-        // Always fetch the latest messages from the Workspace Service.
-        // The agent-runtime uploads session history after each task completes,
-        // so the server has the authoritative conversation state.
-        useSessionStore.getState().setSessionState({
-          sessionId,
-          workspaceId,
-          status: 'ready',
-        });
-        useSessionStore.getState().setTaskState(null);
-        useSessionStore.getState().setViewingHistory(true);
-        useMessagesStore.getState().clear();
+      const sessionStore = useSessionStore.getState();
+      const msgStore = useMessagesStore.getState();
+      const currentSessionId = sessionStore.sessionState?.sessionId;
 
+      // Don't navigate if already viewing this session
+      if (currentSessionId === sessionId) {
+        setView('conversation');
+        return;
+      }
+
+      // Cache current messages before navigating away
+      if (currentSessionId && msgStore.messages.length > 0) {
+        msgStore.cacheMessages(currentSessionId);
+      }
+
+      const liveSessionId = sessionStore.liveSessionId;
+      const isNavigatingToLive = sessionId === liveSessionId;
+
+      // Update session state
+      sessionStore.setSessionState({ sessionId, workspaceId, status: 'ready' });
+
+      if (isNavigatingToLive) {
+        // Returning to the live session — restore from cache, keep it live
+        sessionStore.setViewingHistory(false);
+        if (!msgStore.restoreFromCache(sessionId)) {
+          // Cache miss for live session — should not happen, but fall through to WS fetch
+          msgStore.clear();
+        } else {
+          setView('conversation');
+          return;
+        }
+      } else {
+        // Historical session — try cache, fall back to WS fetch
+        sessionStore.setTaskState(null);
+        sessionStore.setViewingHistory(true);
+        if (msgStore.restoreFromCache(sessionId)) {
+          setView('conversation');
+          return;
+        }
+        msgStore.clear();
+      }
+
+      // Cache miss — fetch from Workspace Service
+      const fetchHistory = async (): Promise<void> => {
         try {
           const result = await window.coworkIPC.getSessionHistory({
             workspaceId,
@@ -113,6 +150,8 @@ export function Sidebar(): React.JSX.Element {
               timestamp: msg.timestamp,
             }));
             useMessagesStore.getState().loadHistory(displayMessages);
+            // Cache fetched data for future navigation
+            useMessagesStore.getState().cacheMessages(sessionId);
           } else if (!result.success) {
             console.error('[Sidebar] Failed to load session history:', result.error.message);
             useMessagesStore.getState().addSystemMessage('Failed to load conversation history.');
@@ -123,7 +162,7 @@ export function Sidebar(): React.JSX.Element {
         }
         setView('conversation');
       };
-      void load();
+      void fetchHistory();
     },
     [setView],
   );

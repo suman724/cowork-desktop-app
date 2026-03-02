@@ -48,6 +48,7 @@ export function ConversationView(): React.JSX.Element {
         if (result.success) {
           setSessionState(result.data);
           setViewingHistory(false);
+          useSessionStore.getState().setLiveSession(result.data.sessionId, result.data.workspaceId);
         }
       } catch {
         // Error handled by IPC wrapper

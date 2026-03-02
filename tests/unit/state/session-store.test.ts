@@ -90,4 +90,32 @@ describe('useSessionStore', () => {
     expect(useSessionStore.getState().sessionState).toBeNull();
     expect(useSessionStore.getState().taskState).toBeNull();
   });
+
+  // --- Live session tracking tests ---
+
+  it('tracks live session', () => {
+    useSessionStore.getState().setLiveSession('s-1', 'ws-1');
+    expect(useSessionStore.getState().liveSessionId).toBe('s-1');
+    expect(useSessionStore.getState().liveWorkspaceId).toBe('ws-1');
+  });
+
+  it('clears live session', () => {
+    useSessionStore.getState().setLiveSession('s-1', 'ws-1');
+    useSessionStore.getState().clearLiveSession();
+    expect(useSessionStore.getState().liveSessionId).toBeNull();
+    expect(useSessionStore.getState().liveWorkspaceId).toBeNull();
+  });
+
+  it('live session persists through setViewingHistory', () => {
+    useSessionStore.getState().setLiveSession('s-1', 'ws-1');
+    useSessionStore.getState().setViewingHistory(true);
+    expect(useSessionStore.getState().liveSessionId).toBe('s-1');
+  });
+
+  it('reset clears live session', () => {
+    useSessionStore.getState().setLiveSession('s-1', 'ws-1');
+    useSessionStore.getState().reset();
+    expect(useSessionStore.getState().liveSessionId).toBeNull();
+    expect(useSessionStore.getState().liveWorkspaceId).toBeNull();
+  });
 });
