@@ -40,17 +40,12 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
       return (
         <div className="flex gap-3 px-4 py-1.5" data-testid="tool-message">
           <div className="w-7 shrink-0" />
-          <div
-            className={cn(
-              'min-w-0 flex-1 rounded-md border px-3 py-2 text-xs',
-              'bg-muted/40',
-            )}
-          >
+          <div className={cn('min-w-0 flex-1 rounded-md border px-3 py-2 text-xs', 'bg-muted/40')}>
             <div className="text-muted-foreground mb-1 font-medium">
               {isCall ? 'Tool Call' : 'Tool Result'}: {parsed.toolName}
             </div>
             {parsed.detail && (
-              <pre className="text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px]">
+              <pre className="text-muted-foreground overflow-x-auto font-mono text-[11px] break-all whitespace-pre-wrap">
                 {parsed.detail}
               </pre>
             )}
