@@ -79,6 +79,7 @@ export function Sidebar(): React.JSX.Element {
   }, []);
 
   const handleNewChat = useCallback(() => {
+    useSessionStore.getState().clearLiveSession();
     useSessionStore.getState().setWorkspacePath(null);
     useSessionStore.getState().setSessionState(null);
     useMessagesStore.getState().clear();
@@ -88,18 +89,49 @@ export function Sidebar(): React.JSX.Element {
   const handleSelectSession = useCallback(
     (workspaceId: string, sessionId: string) => {
       const load = async (): Promise<void> => {
+        const sessionStore = useSessionStore.getState();
+        const messagesStore = useMessagesStore.getState();
+
+        // If clicking the saved live session, restore it instead of fetching history
+        if (sessionStore.liveSessionId === sessionId && sessionStore.liveSessionMessages) {
+          messagesStore.loadHistory(sessionStore.liveSessionMessages);
+          sessionStore.setSessionState({
+            sessionId,
+            workspaceId,
+            status: 'ready',
+          });
+          sessionStore.setTaskState(sessionStore.liveTaskState);
+          sessionStore.setViewingHistory(false);
+          setView('conversation');
+          return;
+        }
+
+        // Save current live session messages before navigating away
+        const currentSessionState = sessionStore.sessionState;
+        if (
+          currentSessionState &&
+          !sessionStore.isViewingHistory &&
+          messagesStore.messages.length > 0
+        ) {
+          sessionStore.saveLiveSession(
+            currentSessionState.sessionId,
+            messagesStore.messages,
+            sessionStore.taskState,
+          );
+        }
+
         // Set session context so ConversationView knows which session is active
-        useSessionStore.getState().setSessionState({
+        sessionStore.setSessionState({
           sessionId,
           workspaceId,
           status: 'ready',
         });
         // Clear task state — this is a historical session, not a running task
-        useSessionStore.getState().setTaskState(null);
+        sessionStore.setTaskState(null);
         // Mark as viewing history (enables "Continue" button in ConversationView)
-        useSessionStore.getState().setViewingHistory(true);
+        sessionStore.setViewingHistory(true);
         // Clear previous messages before loading history
-        useMessagesStore.getState().clear();
+        messagesStore.clear();
 
         try {
           const result = await window.coworkIPC.getSessionHistory({
@@ -113,14 +145,14 @@ export function Sidebar(): React.JSX.Element {
               content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
               timestamp: msg.timestamp,
             }));
-            useMessagesStore.getState().loadHistory(displayMessages);
+            messagesStore.loadHistory(displayMessages);
           } else if (!result.success) {
             console.error('[Sidebar] Failed to load session history:', result.error.message);
-            useMessagesStore.getState().addSystemMessage('Failed to load conversation history.');
+            messagesStore.addSystemMessage('Failed to load conversation history.');
           }
         } catch (err) {
           console.error('[Sidebar] Error loading session history:', err);
-          useMessagesStore.getState().addSystemMessage('Failed to load conversation history.');
+          messagesStore.addSystemMessage('Failed to load conversation history.');
         }
         setView('conversation');
       };
