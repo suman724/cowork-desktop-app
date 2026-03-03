@@ -74,10 +74,14 @@ export interface DisplayMessage {
   isStreaming?: boolean;
 }
 
+/** Tool type classification for visual distinction */
+export type ToolCallType = 'tool' | 'agent' | 'sub_agent' | 'skill';
+
 /** Tool call display info */
 export interface ToolCallInfo {
   id: string;
   toolName: string;
+  toolType?: ToolCallType;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'denied';
   arguments?: Record<string, unknown>;
   result?: string;
