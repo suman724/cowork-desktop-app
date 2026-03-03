@@ -79,6 +79,7 @@ export function useSessionEvents(): void {
   const updateTaskStep = useSessionStore((s) => s.updateTaskStep);
   const setTaskRunning = useSessionStore((s) => s.setTaskRunning);
   const setError = useSessionStore((s) => s.setError);
+  const setLastFailedPrompt = useSessionStore((s) => s.setLastFailedPrompt);
 
   const addApproval = useApprovalStore((s) => s.addApproval);
 
@@ -113,7 +114,7 @@ export function useSessionEvents(): void {
             current !== undefined && max !== undefined
               ? `Approaching step limit (${String(current)}/${String(max)})`
               : 'Approaching step limit';
-          addSystemMessage(msg);
+          addSystemMessage(msg, 'warning');
           break;
         }
 
@@ -161,7 +162,7 @@ export function useSessionEvents(): void {
             addApproval(approval);
           } else {
             console.error('[SessionEvents] Malformed approval_requested payload:', p);
-            addSystemMessage('Received malformed approval request');
+            addSystemMessage('Received malformed approval request', 'warning');
           }
           break;
         }
@@ -182,7 +183,7 @@ export function useSessionEvents(): void {
           setTaskRunning(false);
           const message = typeof p.message === 'string' ? p.message : 'Session failed';
           setError(message);
-          addSystemMessage(`Error: ${message}`);
+          addSystemMessage(`Error: ${message}`, 'error');
           break;
         }
 
@@ -190,7 +191,7 @@ export function useSessionEvents(): void {
           finishStreaming();
           setTaskRunning(false);
           setError('Policy expired. Please start a new session.');
-          addSystemMessage('Policy expired. Please start a new session.');
+          addSystemMessage('Policy expired. Please start a new session.', 'error');
           break;
         }
 
@@ -205,7 +206,11 @@ export function useSessionEvents(): void {
           setTaskRunning(false);
           const message = typeof p.message === 'string' ? p.message : 'Task failed';
           setError(message);
-          addSystemMessage(`Error: ${message}`);
+          addSystemMessage(`Error: ${message}`, 'error');
+          if (p.isRecoverable === true) {
+            const taskPrompt = useSessionStore.getState().taskState?.prompt ?? null;
+            setLastFailedPrompt(taskPrompt);
+          }
           break;
         }
 
@@ -214,6 +219,7 @@ export function useSessionEvents(): void {
           const maxRetries = typeof p.maxRetries === 'number' ? p.maxRetries : 0;
           addSystemMessage(
             `Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`,
+            'warning',
           );
           break;
         }
@@ -234,6 +240,7 @@ export function useSessionEvents(): void {
     updateTaskStep,
     setTaskRunning,
     setError,
+    setLastFailedPrompt,
     addApproval,
   ]);
 }

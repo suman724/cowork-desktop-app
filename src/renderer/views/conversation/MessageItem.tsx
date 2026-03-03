@@ -1,4 +1,4 @@
-import { User, Bot, Info } from 'lucide-react';
+import { User, Bot, Info, AlertCircle, AlertTriangle } from 'lucide-react';
 import type { DisplayMessage, ToolCallInfo } from '../../../shared/types';
 import { ToolCallCard } from './ToolCallCard';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -69,16 +69,27 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
     );
   }
 
-  // System messages: compact, left-aligned
+  // System messages: compact, left-aligned, severity-aware
   if (message.role === 'system') {
+    const severity = message.severity ?? 'info';
+    let Icon = Info;
+    let iconBg = 'bg-muted text-muted-foreground';
+    let textClass = 'text-muted-foreground italic';
+    if (severity === 'error') {
+      Icon = AlertCircle;
+      iconBg = 'bg-destructive/10 text-destructive';
+      textClass = 'text-destructive';
+    } else if (severity === 'warning') {
+      Icon = AlertTriangle;
+      iconBg = 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
+      textClass = 'text-yellow-600 dark:text-yellow-400';
+    }
     return (
-      <div className="flex gap-3 px-4 py-4">
-        <div className="bg-muted text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-          <Info className="h-4 w-4" />
+      <div className="flex gap-3 px-4 py-4" data-testid={`system-message-${severity}`}>
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${iconBg}`}>
+          <Icon className="h-4 w-4" />
         </div>
-        <div className="text-muted-foreground min-w-0 flex-1 pt-1 text-sm italic">
-          {message.content}
-        </div>
+        <div className={`min-w-0 flex-1 pt-1 text-sm ${textClass}`}>{message.content}</div>
       </div>
     );
   }

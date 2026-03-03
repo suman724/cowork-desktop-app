@@ -10,6 +10,8 @@ interface SessionStore {
   workspacePath: string | null;
   /** True when viewing a historical session (not a live one) */
   isViewingHistory: boolean;
+  /** Prompt from the last recoverable task failure (for retry) */
+  lastFailedPrompt: string | null;
 
   setSessionState: (state: SessionState | null) => void;
   setTaskState: (state: TaskState | null) => void;
@@ -19,6 +21,7 @@ interface SessionStore {
   setError: (error: string | null) => void;
   setWorkspacePath: (path: string | null) => void;
   setViewingHistory: (viewing: boolean) => void;
+  setLastFailedPrompt: (prompt: string | null) => void;
   reset: () => void;
 }
 
@@ -29,6 +32,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   error: null,
   workspacePath: null,
   isViewingHistory: false,
+  lastFailedPrompt: null,
 
   setSessionState: (sessionState) => set({ sessionState, error: null }),
   setTaskState: (taskState) => set({ taskState }),
@@ -44,6 +48,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setError: (error) => set({ error }),
   setWorkspacePath: (workspacePath) => set({ workspacePath }),
   setViewingHistory: (isViewingHistory) => set({ isViewingHistory }),
+  setLastFailedPrompt: (lastFailedPrompt) => set({ lastFailedPrompt }),
   reset: () =>
     set({
       sessionState: null,
@@ -52,5 +57,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
       error: null,
       workspacePath: null,
       isViewingHistory: false,
+      lastFailedPrompt: null,
     }),
 }));

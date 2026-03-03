@@ -72,6 +72,7 @@ export interface DisplayMessage {
   timestamp: string;
   toolCalls?: ToolCallInfo[];
   isStreaming?: boolean;
+  severity?: 'info' | 'warning' | 'error';
 }
 
 /** Tool type classification for visual distinction */
@@ -94,6 +95,7 @@ export interface SessionEvent {
   sessionId: string;
   taskId?: string;
   stepId?: string;
+  severity?: 'info' | 'warning' | 'error';
   payload: Record<string, unknown>;
 }
 
