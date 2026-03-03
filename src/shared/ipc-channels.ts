@@ -22,6 +22,8 @@ export const IPC_CHANNELS = {
   WORKSPACE_LIST: 'workspace:list',
   WORKSPACE_LIST_SESSIONS: 'workspace:list-sessions',
   WORKSPACE_GET_SESSION_HISTORY: 'workspace:get-session-history',
+  WORKSPACE_DELETE: 'workspace:delete',
+  SESSION_DELETE: 'workspace:delete-session',
 
   // Settings
   SETTINGS_GET: 'settings:get',

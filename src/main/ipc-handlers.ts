@@ -255,6 +255,34 @@ export function registerIpcHandlers(
     },
   );
 
+  // --- Workspace delete ---
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE, async (_event, params: { workspaceId: string }) => {
+    try {
+      await workspaceClient.deleteWorkspace(params.workspaceId);
+      return success(undefined);
+    } catch (err) {
+      return failure(
+        'WORKSPACE_ERROR',
+        err instanceof Error ? err.message : 'Failed to delete workspace',
+      );
+    }
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.SESSION_DELETE,
+    async (_event, params: { workspaceId: string; sessionId: string }) => {
+      try {
+        await workspaceClient.deleteSession(params.workspaceId, params.sessionId);
+        return success(undefined);
+      } catch (err) {
+        return failure(
+          'WORKSPACE_ERROR',
+          err instanceof Error ? err.message : 'Failed to delete session',
+        );
+      }
+    },
+  );
+
   // --- Settings ---
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => {
     return success(settingsStore.get());

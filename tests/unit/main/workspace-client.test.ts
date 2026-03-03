@@ -109,6 +109,36 @@ describe('WorkspaceServiceClient', () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(2); // maxRetries = 2
   });
 
+  it('deletes a workspace', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      json: () => Promise.resolve(undefined),
+    });
+
+    await client.deleteWorkspace('ws-1');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:8002/workspaces/ws-1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
+  it('deletes a session', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      json: () => Promise.resolve(undefined),
+    });
+
+    await client.deleteSession('ws-1', 'sess-1');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:8002/workspaces/ws-1/sessions/sess-1',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
   it('updates config', async () => {
     client.updateConfig({ baseUrl: 'http://new-host:9000' });
 

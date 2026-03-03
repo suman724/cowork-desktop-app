@@ -126,7 +126,9 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps): React.JSX.Element
   const Icon = category.icon;
 
   return (
-    <div className={`bg-card rounded-md border border-l-2 ${category.accent} p-2.5 text-sm`}>
+    <div
+      className={`bg-card overflow-hidden rounded-md border border-l-2 ${category.accent} p-2.5 text-sm`}
+    >
       {/* Header row: icon + name + category badge + status badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { Bot } from 'lucide-react';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { useMessagesStore } from '../../state/messages-store';
 import { useSessionStore } from '../../state/session-store';
@@ -9,9 +10,9 @@ const THINKING_DEBOUNCE_MS = 300;
 
 function ThinkingIndicator(): React.JSX.Element {
   return (
-    <div className="flex gap-3 px-4 py-3">
-      <div className="bg-secondary text-secondary-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium">
-        A
+    <div className="flex gap-3 px-4 py-4">
+      <div className="bg-secondary text-secondary-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+        <Bot className="h-4 w-4" />
       </div>
       <div className="flex items-center gap-1 pt-1">
         <span className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full" />
@@ -63,8 +64,8 @@ export function MessageList(): React.JSX.Element {
   }, [messages, showThinking]);
 
   return (
-    <ScrollArea className="flex-1">
-      <div ref={scrollContainerRef} className="flex flex-col" onScroll={handleScroll}>
+    <ScrollArea className="min-w-0 flex-1">
+      <div ref={scrollContainerRef} className="flex min-w-0 flex-col" onScroll={handleScroll}>
         {messages.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-20">
             <p className="text-muted-foreground text-sm">

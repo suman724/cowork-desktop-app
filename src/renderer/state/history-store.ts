@@ -15,6 +15,8 @@ interface HistoryStore {
   setLoadingWorkspaces: (loading: boolean) => void;
   setLoadingSessions: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  removeWorkspace: (workspaceId: string) => void;
+  removeSession: (sessionId: string) => void;
   reset: () => void;
 }
 
@@ -32,6 +34,16 @@ export const useHistoryStore = create<HistoryStore>((set) => ({
   setLoadingWorkspaces: (isLoadingWorkspaces) => set({ isLoadingWorkspaces }),
   setLoadingSessions: (isLoadingSessions) => set({ isLoadingSessions }),
   setError: (error) => set({ error }),
+  removeWorkspace: (workspaceId) =>
+    set((state) => ({
+      workspaces: state.workspaces.filter((w) => w.workspaceId !== workspaceId),
+      selectedWorkspaceId:
+        state.selectedWorkspaceId === workspaceId ? null : state.selectedWorkspaceId,
+    })),
+  removeSession: (sessionId) =>
+    set((state) => ({
+      sessions: state.sessions.filter((s) => s.sessionId !== sessionId),
+    })),
   reset: () =>
     set({
       workspaces: [],
