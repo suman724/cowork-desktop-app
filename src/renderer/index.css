@@ -3,48 +3,50 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(240 10% 3.9%);
+  /* Light theme — subtle cool-blue tint with indigo primary */
+  --color-background: hsl(220 20% 98%);
+  --color-foreground: hsl(224 20% 14%);
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(240 10% 3.9%);
+  --color-card-foreground: hsl(224 20% 14%);
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(240 10% 3.9%);
-  --color-primary: hsl(240 5.9% 10%);
-  --color-primary-foreground: hsl(0 0% 98%);
-  --color-secondary: hsl(240 4.8% 95.9%);
-  --color-secondary-foreground: hsl(240 5.9% 10%);
-  --color-muted: hsl(240 4.8% 95.9%);
-  --color-muted-foreground: hsl(240 3.8% 46.1%);
-  --color-accent: hsl(240 4.8% 95.9%);
-  --color-accent-foreground: hsl(240 5.9% 10%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(0 0% 98%);
-  --color-border: hsl(240 5.9% 90%);
-  --color-input: hsl(240 5.9% 90%);
-  --color-ring: hsl(240 5.9% 10%);
+  --color-popover-foreground: hsl(224 20% 14%);
+  --color-primary: hsl(230 65% 52%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(220 16% 93%);
+  --color-secondary-foreground: hsl(224 20% 20%);
+  --color-muted: hsl(220 16% 93%);
+  --color-muted-foreground: hsl(220 10% 46%);
+  --color-accent: hsl(225 20% 94%);
+  --color-accent-foreground: hsl(224 20% 14%);
+  --color-destructive: hsl(0 72% 51%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(220 13% 88%);
+  --color-input: hsl(220 13% 88%);
+  --color-ring: hsl(230 65% 52%);
   --radius: 0.5rem;
 }
 
 .dark {
-  --color-background: hsl(240 10% 3.9%);
-  --color-foreground: hsl(0 0% 98%);
-  --color-card: hsl(240 10% 3.9%);
-  --color-card-foreground: hsl(0 0% 98%);
-  --color-popover: hsl(240 10% 3.9%);
-  --color-popover-foreground: hsl(0 0% 98%);
-  --color-primary: hsl(0 0% 98%);
-  --color-primary-foreground: hsl(240 5.9% 10%);
-  --color-secondary: hsl(240 3.7% 15.9%);
-  --color-secondary-foreground: hsl(0 0% 98%);
-  --color-muted: hsl(240 3.7% 15.9%);
-  --color-muted-foreground: hsl(240 5% 64.9%);
-  --color-accent: hsl(240 3.7% 15.9%);
-  --color-accent-foreground: hsl(0 0% 98%);
-  --color-destructive: hsl(0 62.8% 30.6%);
-  --color-destructive-foreground: hsl(0 0% 98%);
-  --color-border: hsl(240 3.7% 15.9%);
-  --color-input: hsl(240 3.7% 15.9%);
-  --color-ring: hsl(240 4.9% 83.9%);
+  /* Dark theme — deep navy with vibrant indigo primary */
+  --color-background: hsl(228 20% 10%);
+  --color-foreground: hsl(220 15% 94%);
+  --color-card: hsl(228 18% 13%);
+  --color-card-foreground: hsl(220 15% 94%);
+  --color-popover: hsl(228 18% 13%);
+  --color-popover-foreground: hsl(220 15% 94%);
+  --color-primary: hsl(230 65% 62%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(228 16% 18%);
+  --color-secondary-foreground: hsl(220 15% 90%);
+  --color-muted: hsl(228 14% 17%);
+  --color-muted-foreground: hsl(220 10% 58%);
+  --color-accent: hsl(228 16% 20%);
+  --color-accent-foreground: hsl(220 15% 94%);
+  --color-destructive: hsl(0 62% 40%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(228 14% 20%);
+  --color-input: hsl(228 14% 20%);
+  --color-ring: hsl(230 65% 62%);
 }
 
 @layer base {
@@ -57,4 +59,142 @@
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
+
+  /* Override Radix ScrollArea viewport inner wrapper.
+     Radix uses display:table so the wrapper expands to content width,
+     which causes horizontal overflow. Block display respects parent width. */
+  [data-radix-scroll-area-viewport] > div {
+    display: block !important;
+  }
+}
+
+/* Markdown prose styles for LLM responses */
+.markdown-body {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-foreground);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.markdown-body h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.markdown-body h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.markdown-body h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.markdown-body h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.markdown-body p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5rem;
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+}
+
+.markdown-body li {
+  margin-top: 0.125rem;
+  margin-bottom: 0.125rem;
+}
+
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-top: 0.125rem;
+  margin-bottom: 0.125rem;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border);
+  padding: 0.375rem 0.75rem;
+  text-align: left;
+}
+
+.markdown-body th {
+  background-color: var(--color-muted);
+  font-weight: 600;
+}
+
+.markdown-body a {
+  color: hsl(210 100% 56%);
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 0.375rem;
 }

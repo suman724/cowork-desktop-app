@@ -50,6 +50,47 @@ describe('useHistoryStore', () => {
     expect(useHistoryStore.getState().error).toBe('Something went wrong');
   });
 
+  it('removes a workspace by id', () => {
+    useHistoryStore
+      .getState()
+      .setWorkspaces([
+        { workspaceId: 'ws-1' },
+        { workspaceId: 'ws-2' },
+        { workspaceId: 'ws-3' },
+      ] as never);
+    useHistoryStore.getState().setSelectedWorkspaceId('ws-2');
+
+    useHistoryStore.getState().removeWorkspace('ws-2');
+
+    const state = useHistoryStore.getState();
+    expect(state.workspaces).toHaveLength(2);
+    expect(state.workspaces.map((w) => w.workspaceId)).toEqual(['ws-1', 'ws-3']);
+    expect(state.selectedWorkspaceId).toBeNull();
+  });
+
+  it('removes a workspace without affecting selectedWorkspaceId if different', () => {
+    useHistoryStore
+      .getState()
+      .setWorkspaces([{ workspaceId: 'ws-1' }, { workspaceId: 'ws-2' }] as never);
+    useHistoryStore.getState().setSelectedWorkspaceId('ws-1');
+
+    useHistoryStore.getState().removeWorkspace('ws-2');
+
+    expect(useHistoryStore.getState().selectedWorkspaceId).toBe('ws-1');
+  });
+
+  it('removes a session by id', () => {
+    useHistoryStore
+      .getState()
+      .setSessions([{ sessionId: 'ss-1' }, { sessionId: 'ss-2' }, { sessionId: 'ss-3' }] as never);
+
+    useHistoryStore.getState().removeSession('ss-2');
+
+    const sessions = useHistoryStore.getState().sessions;
+    expect(sessions).toHaveLength(2);
+    expect(sessions.map((s) => s.sessionId)).toEqual(['ss-1', 'ss-3']);
+  });
+
   it('resets all state', () => {
     useHistoryStore.getState().setWorkspaces([{ workspaceId: 'ws-1' }] as never);
     useHistoryStore.getState().setSelectedWorkspaceId('ws-1');

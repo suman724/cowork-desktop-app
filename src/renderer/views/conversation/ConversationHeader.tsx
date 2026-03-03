@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { StatusIndicator } from '../../components/StatusIndicator';
@@ -15,7 +16,7 @@ export function ConversationHeader(): React.JSX.Element {
     : null;
 
   return (
-    <div className="flex items-center justify-between border-b px-4 py-2">
+    <div className="flex items-center justify-between border-b px-4 py-2 shadow-sm">
       <div className="flex items-center gap-3">
         <h1 className="text-sm font-semibold">{folderName ?? 'Conversation'}</h1>
         {isRunning && (
@@ -29,6 +30,7 @@ export function ConversationHeader(): React.JSX.Element {
       <div className="flex items-center gap-3">
         <StatusIndicator status={agentRuntimeStatus} />
         <Button variant="ghost" size="sm" onClick={() => setView('settings')}>
+          <Settings className="mr-1.5 h-4 w-4" />
           Settings
         </Button>
       </div>
