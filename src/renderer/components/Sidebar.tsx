@@ -62,9 +62,7 @@ export function Sidebar(): React.JSX.Element {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Failed to load workspaces');
       }
-      if (!controller.signal.aborted) {
-        setLoadingWorkspaces(false);
-      }
+      setLoadingWorkspaces(false);
     };
     void load();
 
