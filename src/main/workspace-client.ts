@@ -58,7 +58,23 @@ export class WorkspaceServiceClient {
     return this.fetchWithRetry<ConversationMessage[]>(url);
   }
 
-  private async fetchWithRetry<T>(url: string): Promise<T> {
+  /**
+   * Delete a workspace and all its artifacts.
+   */
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    const url = `${this.config.baseUrl}/workspaces/${encodeURIComponent(workspaceId)}`;
+    await this.fetchWithRetry<undefined>(url, 'DELETE');
+  }
+
+  /**
+   * Delete all artifacts for a session within a workspace.
+   */
+  async deleteSession(workspaceId: string, sessionId: string): Promise<void> {
+    const url = `${this.config.baseUrl}/workspaces/${encodeURIComponent(workspaceId)}/sessions/${encodeURIComponent(sessionId)}`;
+    await this.fetchWithRetry<undefined>(url, 'DELETE');
+  }
+
+  private async fetchWithRetry<T>(url: string, method: string = 'GET'): Promise<T> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < this.config.maxRetries; attempt++) {
@@ -73,6 +89,7 @@ export class WorkspaceServiceClient {
           }
 
           const response = await fetch(url, {
+            method,
             signal: controller.signal,
             headers,
           });
@@ -84,6 +101,7 @@ export class WorkspaceServiceClient {
             throw err;
           }
 
+          if (response.status === 204) return undefined as T;
           return (await response.json()) as T;
         } finally {
           clearTimeout(timer);

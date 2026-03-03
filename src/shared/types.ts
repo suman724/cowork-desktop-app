@@ -1,7 +1,7 @@
 import type { ApprovalRequest, ConversationMessage, Workspace } from '@cowork/platform';
 
 /** Agent runtime process status */
-export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed';
+export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed' | 'reconnecting';
 
 /** Session state as seen by the desktop app (matches CreateSession JSON-RPC response) */
 export interface SessionState {
@@ -74,11 +74,15 @@ export interface DisplayMessage {
   isStreaming?: boolean;
 }
 
+/** Tool type classification for visual distinction */
+export type ToolCallType = 'tool' | 'agent' | 'sub_agent' | 'skill';
+
 /** Tool call display info */
 export interface ToolCallInfo {
   id: string;
   toolName: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  toolType?: ToolCallType;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'denied';
   arguments?: Record<string, unknown>;
   result?: string;
   error?: string;

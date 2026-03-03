@@ -48,7 +48,7 @@ export function registerIpcHandlers(
       params: {
         tenantId: string;
         userId: string;
-        workspaceHint?: { localPaths?: string[] };
+        workspaceHint?: { localPaths?: string[]; workspaceId?: string };
       },
     ) => {
       try {
@@ -89,6 +89,22 @@ export function registerIpcHandlers(
       }
     },
   );
+
+  ipcMain.handle(IPC_CHANNELS.SESSION_RESUME, async (_event, params: { sessionId: string }) => {
+    try {
+      // Ensure runtime is started
+      if (runtime.getStatus() !== 'running') {
+        runtime.start();
+      }
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime is not running');
+
+      const result = await client.request('ResumeSession', { sessionId: params.sessionId }, 60_000);
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
 
   ipcMain.handle(IPC_CHANNELS.SESSION_GET_STATE, async (_event, params: { sessionId: string }) => {
     try {
@@ -234,6 +250,34 @@ export function registerIpcHandlers(
         return failure(
           'WORKSPACE_ERROR',
           err instanceof Error ? err.message : 'Failed to get session history',
+        );
+      }
+    },
+  );
+
+  // --- Workspace delete ---
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE, async (_event, params: { workspaceId: string }) => {
+    try {
+      await workspaceClient.deleteWorkspace(params.workspaceId);
+      return success(undefined);
+    } catch (err) {
+      return failure(
+        'WORKSPACE_ERROR',
+        err instanceof Error ? err.message : 'Failed to delete workspace',
+      );
+    }
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.SESSION_DELETE,
+    async (_event, params: { workspaceId: string; sessionId: string }) => {
+      try {
+        await workspaceClient.deleteSession(params.workspaceId, params.sessionId);
+        return success(undefined);
+      } catch (err) {
+        return failure(
+          'WORKSPACE_ERROR',
+          err instanceof Error ? err.message : 'Failed to delete session',
         );
       }
     },

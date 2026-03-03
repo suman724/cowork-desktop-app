@@ -10,6 +10,56 @@ interface UseStartTask {
   error: string | null;
 }
 
+/**
+ * Ensure the agent runtime has an active session.
+ *
+ * When the user loaded a historical session from the sidebar, the runtime
+ * may be stopped or unaware of that session.  In that case we create a new
+ * runtime session (which also auto-starts the runtime) and update the store.
+ *
+ * Returns the live sessionId to use for StartTask, or null on failure.
+ */
+async function ensureRuntimeSession(): Promise<string | null> {
+  const runtimeStatus = useSessionStore.getState().agentRuntimeStatus;
+
+  // If runtime is already running, the current sessionState is live
+  if (runtimeStatus === 'running') {
+    return useSessionStore.getState().sessionState?.sessionId ?? null;
+  }
+
+  // If runtime is reconnecting, wait up to 5s for it to become running
+  if (runtimeStatus === 'reconnecting') {
+    const MAX_WAIT_MS = 5_000;
+    const POLL_MS = 500;
+    const start = Date.now();
+    while (Date.now() - start < MAX_WAIT_MS) {
+      await new Promise((r) => setTimeout(r, POLL_MS));
+      if (useSessionStore.getState().agentRuntimeStatus === 'running') {
+        return useSessionStore.getState().sessionState?.sessionId ?? null;
+      }
+    }
+    // Timed out waiting for reconnect
+    return null;
+  }
+
+  // Runtime is stopped/crashed — create a fresh session
+  const settings = useUIStore.getState().settings;
+  const workspacePath = useSessionStore.getState().workspacePath;
+
+  const result = await window.coworkIPC.createSession({
+    tenantId: settings.tenantId ?? 'dev-tenant',
+    userId: settings.userId ?? 'dev-user',
+    workspaceHint: workspacePath ? { localPaths: [workspacePath] } : undefined,
+  });
+
+  if (!result.success) {
+    return null;
+  }
+
+  useSessionStore.getState().setSessionState(result.data);
+  return result.data.sessionId;
+}
+
 export function useStartTask(): UseStartTask {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +69,7 @@ export function useStartTask(): UseStartTask {
 
   const startTask = useCallback(
     async (prompt: string) => {
-      const sessionState = useSessionStore.getState().sessionState;
-      if (!sessionState) {
+      if (!useSessionStore.getState().sessionState) {
         setError('No active session');
         return;
       }
@@ -31,22 +80,30 @@ export function useStartTask(): UseStartTask {
       setIsLoading(true);
       setError(null);
 
-      const taskId = `task-${Date.now()}`;
-      const settings = useUIStore.getState().settings;
-      addUserMessage(prompt);
-
-      setTaskState({
-        taskId,
-        sessionId: sessionState.sessionId,
-        prompt,
-        currentStep: 0,
-        maxSteps: settings.maxStepsPerTask,
-        isRunning: true,
-      });
-
       try {
+        // Ensure the runtime is started and has a session
+        const sessionId = await ensureRuntimeSession();
+        if (!sessionId) {
+          setError('Failed to create session');
+          useMessagesStore.getState().addSystemMessage('Error: Failed to create session');
+          return;
+        }
+
+        const taskId = `task-${Date.now()}`;
+        const settings = useUIStore.getState().settings;
+        addUserMessage(prompt);
+
+        setTaskState({
+          taskId,
+          sessionId,
+          prompt,
+          currentStep: 0,
+          maxSteps: settings.maxStepsPerTask,
+          isRunning: true,
+        });
+
         const result = await window.coworkIPC.startTask({
-          sessionId: sessionState.sessionId,
+          sessionId,
           taskId,
           prompt,
           taskOptions: {

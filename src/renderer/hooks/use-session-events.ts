@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { SessionEvent, ToolCallInfo } from '../../shared/types';
+import type { SessionEvent, ToolCallInfo, ToolCallType } from '../../shared/types';
 import type { ApprovalRequest } from '../../shared/types';
 import { useMessagesStore } from '../state/messages-store';
 import { useSessionStore } from '../state/session-store';
@@ -23,6 +23,7 @@ const EVENT_TYPE = {
   POLICY_EXPIRED: 'policy_expired',
   TASK_COMPLETED: 'task_completed',
   TASK_FAILED: 'task_failed',
+  LLM_RETRY: 'llm_retry',
 } as const;
 
 /**
@@ -120,9 +121,16 @@ export function useSessionEvents(): void {
           const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
           const toolName = typeof p.toolName === 'string' ? p.toolName : undefined;
           if (toolCallId && toolName) {
+            const validToolTypes = new Set<ToolCallType>(['tool', 'agent', 'sub_agent', 'skill']);
+            const rawToolType = typeof p.toolType === 'string' ? p.toolType : undefined;
+            const toolType: ToolCallType | undefined =
+              rawToolType && validToolTypes.has(rawToolType as ToolCallType)
+                ? (rawToolType as ToolCallType)
+                : undefined;
             const toolCall: ToolCallInfo = {
               id: toolCallId,
               toolName,
+              toolType,
               status: 'running',
               arguments:
                 typeof p.arguments === 'object' && p.arguments !== null
@@ -138,7 +146,8 @@ export function useSessionEvents(): void {
           const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
           if (toolCallId) {
             updateToolCall(toolCallId, {
-              status: p.status === 'failed' ? 'failed' : 'completed',
+              status:
+                p.status === 'failed' ? 'failed' : p.status === 'denied' ? 'denied' : 'completed',
               result: typeof p.result === 'string' ? p.result : undefined,
               error: typeof p.error === 'string' ? p.error : undefined,
             });
@@ -197,6 +206,15 @@ export function useSessionEvents(): void {
           const message = typeof p.message === 'string' ? p.message : 'Task failed';
           setError(message);
           addSystemMessage(`Error: ${message}`);
+          break;
+        }
+
+        case EVENT_TYPE.LLM_RETRY: {
+          const attempt = typeof p.attempt === 'number' ? p.attempt : 0;
+          const maxRetries = typeof p.maxRetries === 'number' ? p.maxRetries : 0;
+          addSystemMessage(
+            `Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`,
+          );
           break;
         }
 

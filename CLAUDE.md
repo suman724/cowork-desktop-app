@@ -23,12 +23,12 @@ The app follows a strict main/renderer process split with a typed preload bridge
 - `App.tsx` — View router, global event hooks, approval modal overlay
 - `state/` — 5 Zustand stores: session, messages (streaming accumulation), approval (FIFO queue), history, ui
 - `hooks/` — 11 hooks: 2 event dispatchers (`useSessionEvents`, `useAgentRuntimeEvents`) + 9 IPC wrappers with loading/error state
-- `views/` — 5 view groups: conversation (7 components), history (6), approval (2), patch (3), settings (1)
+- `views/` — 5 view groups: conversation (8 components including MarkdownRenderer), history (6), approval (2), patch (3), settings (1)
 - `components/` — Shared: `ErrorBoundary`, `ThemeProvider`, `AppLayout`, `StatusIndicator` + 17 shadcn/ui primitives in `ui/`
 
 **Shared** (`src/shared/`) — Imported by both processes:
 - `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent`, `AppSettings` + re-exports from `@cowork/platform`
-- `ipc-channels.ts` — `IPC_CHANNELS` (14 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
+- `ipc-channels.ts` — `IPC_CHANNELS` (15 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
 
 ## Key Constraints
 
@@ -49,6 +49,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 | Channel | JSON-RPC Method / Action |
 |---------|-------------------------|
 | `session:create` | `CreateSession` (60s timeout) |
+| `session:resume` | `ResumeSession` (60s timeout) |
 | `session:get-state` | `GetSessionState` |
 | `task:start` | `StartTask` |
 | `task:cancel` | `CancelTask` |
@@ -57,6 +58,8 @@ The app follows a strict main/renderer process split with a typed preload bridge
 | `workspace:list` | WorkspaceService REST |
 | `workspace:list-sessions` | WorkspaceService REST |
 | `workspace:get-session-history` | WorkspaceService REST |
+| `workspace:delete` | WorkspaceService REST |
+| `workspace:delete-session` | WorkspaceService REST |
 | `settings:get` | Local SettingsStore |
 | `settings:update` | Local SettingsStore |
 | `runtime:status` | AgentRuntimeManager |
@@ -141,7 +144,7 @@ cowork-desktop-app/
         use-session-history.ts
         use-settings.ts
       views/
-        conversation/        # MessageList, MessageItem, ToolCallCard,
+        conversation/        # MessageList, MessageItem, MarkdownRenderer, ToolCallCard,
                              # PromptInput, Header, Footer, ConversationView
         history/             # WorkspaceList/Item, SessionList/Item,
                              # HistoryHeader, HistoryView
@@ -178,7 +181,8 @@ cowork-desktop-app/
 - **TypeScript**: 5.7+ with `strict: true`, `noUncheckedIndexedAccess: true`
 - **Linting**: ESLint 9 flat config with `typescript-eslint/strictTypeChecked`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-config-prettier`. shadcn/ui components in `components/ui/` are excluded from linting.
 - **Formatting**: Prettier — single quotes, trailing commas, 100 print width, 2-space indent, `prettier-plugin-tailwindcss`
-- **Testing**: Vitest + React Testing Library (unit), Playwright (E2E). 156 unit tests across 20 test files.
+- **Markdown rendering**: `react-markdown` v9 + `remark-gfm` (GFM tables, strikethrough, task lists) + `rehype-highlight` (syntax-highlighted code blocks via highlight.js). Used in `MarkdownRenderer` component for assistant messages.
+- **Testing**: Vitest + React Testing Library (unit), Playwright (E2E). 203 unit tests across 21 test files.
 - **Build**: electron-vite for development (3 build targets: main, preload, renderer), electron-builder for distribution
 - **UI**: shadcn/ui (Radix + Tailwind CSS v4) with 17 primitives. Tailwind v4 uses CSS-first config via `@tailwindcss/vite`.
 - **State management**: Zustand v5 (lightweight, TypeScript-native)

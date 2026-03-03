@@ -8,7 +8,7 @@ interface UseCreateSession {
   createSession: (params: {
     tenantId: string;
     userId: string;
-    workspaceHint?: { localPaths?: string[] };
+    workspaceHint?: { localPaths?: string[]; workspaceId?: string };
   }) => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -25,7 +25,7 @@ export function useCreateSession(): UseCreateSession {
     async (params: {
       tenantId: string;
       userId: string;
-      workspaceHint?: { localPaths?: string[] };
+      workspaceHint?: { localPaths?: string[]; workspaceId?: string };
     }) => {
       setIsLoading(true);
       setError(null);

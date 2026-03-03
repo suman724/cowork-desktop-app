@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { SidebarWorkspaceItem } from './SidebarWorkspaceItem';
@@ -18,6 +19,8 @@ export function Sidebar(): React.JSX.Element {
   const isLoadingWorkspaces = useHistoryStore((s) => s.isLoadingWorkspaces);
   const setLoadingWorkspaces = useHistoryStore((s) => s.setLoadingWorkspaces);
   const setError = useHistoryStore((s) => s.setError);
+  const removeWorkspace = useHistoryStore((s) => s.removeWorkspace);
+  const removeSession = useHistoryStore((s) => s.removeSession);
 
   // Re-fetch workspaces when a new session is created (sessionState changes)
   const sessionState = useSessionStore((s) => s.sessionState);
@@ -88,15 +91,21 @@ export function Sidebar(): React.JSX.Element {
   const handleSelectSession = useCallback(
     (workspaceId: string, sessionId: string) => {
       const load = async (): Promise<void> => {
-        // Set session context so ConversationView knows which session is active
+        // Set workspace path from the workspace's localPath so the agent runtime
+        // knows the working directory for this session's tools and LLM context.
+        const ws = workspaces.find((w) => w.workspaceId === workspaceId);
+        useSessionStore.getState().setWorkspacePath(ws?.localPath ?? null);
+
+        // Always fetch the latest messages from the Workspace Service.
+        // The agent-runtime uploads session history after each task completes,
+        // so the server has the authoritative conversation state.
         useSessionStore.getState().setSessionState({
           sessionId,
           workspaceId,
           status: 'ready',
         });
-        // Clear task state — this is a historical session, not a running task
         useSessionStore.getState().setTaskState(null);
-        // Clear previous messages before loading history
+        useSessionStore.getState().setViewingHistory(true);
         useMessagesStore.getState().clear();
 
         try {
@@ -105,6 +114,12 @@ export function Sidebar(): React.JSX.Element {
             sessionId,
           });
           if (result.success && result.data.length > 0) {
+            console.debug(
+              '[Sidebar] Session history loaded:',
+              result.data.length,
+              'messages, roles:',
+              result.data.map((m) => m.role),
+            );
             const displayMessages: DisplayMessage[] = result.data.map((msg, i) => ({
               id: `history-${i}`,
               role: msg.role,
@@ -124,19 +139,57 @@ export function Sidebar(): React.JSX.Element {
       };
       void load();
     },
-    [setView],
+    [setView, workspaces],
+  );
+
+  const handleDeleteWorkspace = useCallback(
+    (workspaceId: string) => {
+      const doDelete = async (): Promise<void> => {
+        try {
+          const result = await window.coworkIPC.deleteWorkspace({ workspaceId });
+          if (result.success) {
+            removeWorkspace(workspaceId);
+            if (expandedWorkspaceId === workspaceId) {
+              setExpandedWorkspaceId(null);
+              setSessions([]);
+            }
+          } else {
+            console.error('[Sidebar] Failed to delete workspace:', result.error.message);
+          }
+        } catch (err) {
+          console.error('[Sidebar] Error deleting workspace:', err);
+        }
+      };
+      void doDelete();
+    },
+    [removeWorkspace, expandedWorkspaceId],
+  );
+
+  const handleDeleteSession = useCallback(
+    (workspaceId: string, sessionId: string) => {
+      const doDelete = async (): Promise<void> => {
+        try {
+          const result = await window.coworkIPC.deleteSession({ workspaceId, sessionId });
+          if (result.success) {
+            removeSession(sessionId);
+            setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+          } else {
+            console.error('[Sidebar] Failed to delete session:', result.error.message);
+          }
+        } catch (err) {
+          console.error('[Sidebar] Error deleting session:', err);
+        }
+      };
+      void doDelete();
+    },
+    [removeSession],
   );
 
   return (
     <div className="flex h-full w-64 shrink-0 flex-col border-r" data-testid="sidebar">
       <div className="border-b px-3 py-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={handleNewChat}
-          data-testid="new-chat-button"
-        >
+        <Button size="sm" className="w-full" onClick={handleNewChat} data-testid="new-chat-button">
+          <Plus className="h-4 w-4" />
           New Chat
         </Button>
       </div>
@@ -154,6 +207,7 @@ export function Sidebar(): React.JSX.Element {
                   workspace={ws}
                   isExpanded={ws.workspaceId === expandedWorkspaceId}
                   onClick={() => handleToggleWorkspace(ws.workspaceId)}
+                  onDelete={handleDeleteWorkspace}
                 />
                 {ws.workspaceId === expandedWorkspaceId && (
                   <div className="mt-0.5 ml-3 space-y-0.5 border-l pl-2">
@@ -167,6 +221,7 @@ export function Sidebar(): React.JSX.Element {
                           key={session.sessionId}
                           session={session}
                           onClick={() => handleSelectSession(ws.workspaceId, session.sessionId)}
+                          onDelete={(sessionId) => handleDeleteSession(ws.workspaceId, sessionId)}
                         />
                       ))
                     )}

@@ -23,8 +23,10 @@ export interface CoworkIPC {
   createSession: (params: {
     tenantId: string;
     userId: string;
-    workspaceHint?: { localPaths?: string[] };
+    workspaceHint?: { localPaths?: string[]; workspaceId?: string };
   }) => Promise<IpcResponse<SessionState>>;
+
+  resumeSession: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
 
   getSessionState: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
 
@@ -68,6 +70,9 @@ export interface CoworkIPC {
     sessionId: string;
   }) => Promise<IpcResponse<ConversationMessage[]>>;
 
+  deleteWorkspace: (params: { workspaceId: string }) => Promise<IpcResponse<void>>;
+  deleteSession: (params: { workspaceId: string; sessionId: string }) => Promise<IpcResponse<void>>;
+
   // Settings
   getSettings: () => Promise<IpcResponse<AppSettings>>;
   updateSettings: (params: Partial<AppSettings>) => Promise<IpcResponse<AppSettings>>;
@@ -96,6 +101,7 @@ export interface CoworkIPC {
 const coworkIPC: CoworkIPC = {
   // Session lifecycle
   createSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CREATE, params),
+  resumeSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_RESUME, params),
   getSessionState: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET_STATE, params),
 
   // Task control
@@ -113,6 +119,8 @@ const coworkIPC: CoworkIPC = {
   listSessions: (params) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LIST_SESSIONS, params),
   getSessionHistory: (params) =>
     ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_SESSION_HISTORY, params),
+  deleteWorkspace: (params) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE, params),
+  deleteSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_DELETE, params),
 
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),

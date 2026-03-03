@@ -8,6 +8,8 @@ interface SessionStore {
   error: string | null;
   /** Local project path for workspace resolution (null = general workspace) */
   workspacePath: string | null;
+  /** True when viewing a historical session (not a live one) */
+  isViewingHistory: boolean;
 
   setSessionState: (state: SessionState | null) => void;
   setTaskState: (state: TaskState | null) => void;
@@ -16,6 +18,7 @@ interface SessionStore {
   setAgentRuntimeStatus: (status: AgentRuntimeStatus) => void;
   setError: (error: string | null) => void;
   setWorkspacePath: (path: string | null) => void;
+  setViewingHistory: (viewing: boolean) => void;
   reset: () => void;
 }
 
@@ -25,6 +28,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   agentRuntimeStatus: 'stopped',
   error: null,
   workspacePath: null,
+  isViewingHistory: false,
 
   setSessionState: (sessionState) => set({ sessionState, error: null }),
   setTaskState: (taskState) => set({ taskState }),
@@ -39,6 +43,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setAgentRuntimeStatus: (agentRuntimeStatus) => set({ agentRuntimeStatus }),
   setError: (error) => set({ error }),
   setWorkspacePath: (workspacePath) => set({ workspacePath }),
+  setViewingHistory: (isViewingHistory) => set({ isViewingHistory }),
   reset: () =>
     set({
       sessionState: null,
@@ -46,5 +51,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
       agentRuntimeStatus: 'stopped',
       error: null,
       workspacePath: null,
+      isViewingHistory: false,
     }),
 }));

@@ -7,6 +7,10 @@ import type { AgentRuntimeStatus, SessionEvent } from '../shared/types';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const SIGTERM_GRACE_MS = 5_000;
+const MAX_RESTART_ATTEMPTS = 3;
+const CRASH_WINDOW_MS = 60_000;
+const RESTART_BASE_DELAY_MS = 1_000;
+const RESTART_MAX_DELAY_MS = 15_000;
 
 /**
  * Manages the cowork-agent-runtime child process lifecycle.
@@ -23,6 +27,8 @@ export class AgentRuntimeManager {
   private status: AgentRuntimeStatus = 'stopped';
   private mainWindow: BrowserWindow | null = null;
   private shuttingDown = false;
+  private restartTimestamps: number[] = [];
+  private restartTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Set the main window for push notifications */
   setMainWindow(win: BrowserWindow): void {
@@ -49,6 +55,7 @@ export class AgentRuntimeManager {
 
     this.setStatus('starting');
     this.shuttingDown = false;
+    this.restartTimer = null;
 
     const binaryPath = this.locateBinary();
 
@@ -109,10 +116,10 @@ export class AgentRuntimeManager {
       if (this.shuttingDown) {
         this.setStatus('stopped');
       } else if (this.status === 'running' || this.status === 'starting') {
-        this.setStatus('crashed');
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send(IPC_EVENTS.RUNTIME_CRASHED, { code, signal });
         }
+        this.attemptAutoRestart();
       } else {
         this.setStatus('stopped');
       }
@@ -133,6 +140,13 @@ export class AgentRuntimeManager {
    * Sends Shutdown RPC → waits 10s → SIGTERM → waits 5s → SIGKILL.
    */
   async shutdown(): Promise<void> {
+    // Clear any pending auto-restart
+    if (this.restartTimer !== null) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+    this.restartTimestamps = [];
+
     if (!this.process || !this.client) {
       this.setStatus('stopped');
       return;
@@ -180,6 +194,39 @@ export class AgentRuntimeManager {
     this.process = null;
     this.client = null;
     this.setStatus('stopped');
+  }
+
+  private attemptAutoRestart(): void {
+    const now = Date.now();
+    // Clean timestamps older than the crash window
+    this.restartTimestamps = this.restartTimestamps.filter((ts) => now - ts < CRASH_WINDOW_MS);
+
+    if (this.restartTimestamps.length >= MAX_RESTART_ATTEMPTS) {
+      // Crash loop detected — stay crashed
+      console.error(
+        `[AgentRuntime] Crash loop detected (${String(MAX_RESTART_ATTEMPTS)} crashes in ${String(CRASH_WINDOW_MS / 1000)}s). Staying crashed.`,
+      );
+      this.setStatus('crashed');
+      return;
+    }
+
+    const attempt = this.restartTimestamps.length;
+    const delay = Math.min(RESTART_BASE_DELAY_MS * 2 ** attempt, RESTART_MAX_DELAY_MS);
+
+    console.error(
+      `[AgentRuntime] Auto-restarting in ${String(delay)}ms (attempt ${String(attempt + 1)}/${String(MAX_RESTART_ATTEMPTS)})`,
+    );
+    this.setStatus('reconnecting');
+
+    this.restartTimer = setTimeout(() => {
+      this.restartTimestamps.push(Date.now());
+      try {
+        this.start();
+      } catch {
+        // start() failed synchronously — recurse to try again or give up
+        this.attemptAutoRestart();
+      }
+    }, delay);
   }
 
   private setStatus(status: AgentRuntimeStatus): void {
