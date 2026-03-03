@@ -88,6 +88,11 @@ export function Sidebar(): React.JSX.Element {
   const handleSelectSession = useCallback(
     (workspaceId: string, sessionId: string) => {
       const load = async (): Promise<void> => {
+        // Set workspace path from the workspace's localPath so the agent runtime
+        // knows the working directory for this session's tools and LLM context.
+        const ws = workspaces.find((w) => w.workspaceId === workspaceId);
+        useSessionStore.getState().setWorkspacePath(ws?.localPath ?? null);
+
         // Always fetch the latest messages from the Workspace Service.
         // The agent-runtime uploads session history after each task completes,
         // so the server has the authoritative conversation state.
@@ -125,7 +130,7 @@ export function Sidebar(): React.JSX.Element {
       };
       void load();
     },
-    [setView],
+    [setView, workspaces],
   );
 
   return (
