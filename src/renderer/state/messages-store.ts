@@ -11,7 +11,7 @@ interface MessagesStore {
   addUserMessage: (content: string) => void;
 
   /** Add a system message */
-  addSystemMessage: (content: string) => void;
+  addSystemMessage: (content: string, severity?: 'info' | 'warning' | 'error') => void;
 
   /** Finish streaming the current assistant message */
   finishStreaming: () => void;
@@ -77,7 +77,7 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
       ],
     })),
 
-  addSystemMessage: (content) =>
+  addSystemMessage: (content, severity) =>
     set((state) => ({
       messages: [
         ...state.messages,
@@ -86,6 +86,7 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
           role: 'system',
           content,
           timestamp: new Date().toISOString(),
+          severity,
         },
       ],
     })),

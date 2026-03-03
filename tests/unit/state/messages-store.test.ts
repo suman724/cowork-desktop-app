@@ -171,6 +171,29 @@ describe('useMessagesStore', () => {
     expect(messages[0]?.role).toBe('user');
   });
 
+  it('addSystemMessage stores severity on the message', () => {
+    useMessagesStore.getState().addSystemMessage('Error occurred', 'error');
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[0]?.severity).toBe('error');
+  });
+
+  it('addSystemMessage stores warning severity', () => {
+    useMessagesStore.getState().addSystemMessage('Retrying...', 'warning');
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages[0]?.severity).toBe('warning');
+  });
+
+  it('addSystemMessage stores undefined severity when not provided', () => {
+    useMessagesStore.getState().addSystemMessage('Info message');
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages[0]?.severity).toBeUndefined();
+  });
+
   it('handles multiple tool calls on one assistant message', () => {
     useMessagesStore.getState().appendTextChunk('Let me check...');
     useMessagesStore

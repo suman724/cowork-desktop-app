@@ -3,9 +3,15 @@ import { useSessionStore } from '../../state/session-store';
 
 interface ConversationFooterProps {
   onCancel: () => void;
+  onRetry?: () => void;
+  canRetry?: boolean;
 }
 
-export function ConversationFooter({ onCancel }: ConversationFooterProps): React.JSX.Element {
+export function ConversationFooter({
+  onCancel,
+  onRetry,
+  canRetry,
+}: ConversationFooterProps): React.JSX.Element {
   const taskState = useSessionStore((s) => s.taskState);
 
   if (!taskState) return <></>;
@@ -41,6 +47,17 @@ export function ConversationFooter({ onCancel }: ConversationFooterProps): React
             aria-label="Cancel current task"
           >
             Cancel
+          </Button>
+        )}
+        {!taskState.isRunning && canRetry && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs"
+            onClick={onRetry}
+            aria-label="Retry failed task"
+          >
+            Retry
           </Button>
         )}
       </div>

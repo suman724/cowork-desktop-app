@@ -79,15 +79,32 @@ describe('useSessionStore', () => {
     expect(useSessionStore.getState().agentRuntimeStatus).toBe('running');
   });
 
+  it('sets lastFailedPrompt', () => {
+    useSessionStore.getState().setLastFailedPrompt('test prompt');
+    expect(useSessionStore.getState().lastFailedPrompt).toBe('test prompt');
+  });
+
+  it('clears lastFailedPrompt', () => {
+    useSessionStore.getState().setLastFailedPrompt('test prompt');
+    useSessionStore.getState().setLastFailedPrompt(null);
+    expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
+  });
+
+  it('initializes lastFailedPrompt as null', () => {
+    expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
+  });
+
   it('resets session and task state', () => {
     useSessionStore
       .getState()
       .setSessionState({ sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' });
     useSessionStore.getState().setTaskState({ taskId: 't-1' } as never);
+    useSessionStore.getState().setLastFailedPrompt('some prompt');
 
     useSessionStore.getState().reset();
 
     expect(useSessionStore.getState().sessionState).toBeNull();
     expect(useSessionStore.getState().taskState).toBeNull();
+    expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
   });
 });

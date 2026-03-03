@@ -14,10 +14,17 @@ export function ConversationView(): React.JSX.Element {
   const isViewingHistory = useSessionStore((s) => s.isViewingHistory);
   const setViewingHistory = useSessionStore((s) => s.setViewingHistory);
   const setSessionState = useSessionStore((s) => s.setSessionState);
+  const lastFailedPrompt = useSessionStore((s) => s.lastFailedPrompt);
   const { startTask } = useStartTask();
   const { cancelTask } = useCancelTask();
 
   const [isContinuing, setIsContinuing] = useState(false);
+
+  const handleRetry = useCallback(() => {
+    if (lastFailedPrompt) {
+      void startTask(lastFailedPrompt);
+    }
+  }, [lastFailedPrompt, startTask]);
 
   const handleSubmit = useCallback(
     (prompt: string) => {
@@ -58,7 +65,11 @@ export function ConversationView(): React.JSX.Element {
     <div className="flex h-full flex-col">
       <ConversationHeader />
       <MessageList />
-      <ConversationFooter onCancel={handleCancel} />
+      <ConversationFooter
+        onCancel={handleCancel}
+        onRetry={handleRetry}
+        canRetry={lastFailedPrompt !== null}
+      />
       {showContinueButton ? (
         <div className="border-t px-4 py-3">
           <Button

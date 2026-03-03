@@ -101,6 +101,7 @@ export function useStartTask(): UseStartTask {
           maxSteps: settings.maxStepsPerTask,
           isRunning: true,
         });
+        useSessionStore.getState().setLastFailedPrompt(null);
 
         const result = await window.coworkIPC.startTask({
           sessionId,
