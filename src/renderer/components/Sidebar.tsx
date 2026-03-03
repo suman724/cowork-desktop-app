@@ -1,5 +1,5 @@
-import { useEffect, useCallback, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { SidebarWorkspaceItem } from './SidebarWorkspaceItem';
@@ -18,6 +18,7 @@ export function Sidebar(): React.JSX.Element {
   const setWorkspaces = useHistoryStore((s) => s.setWorkspaces);
   const isLoadingWorkspaces = useHistoryStore((s) => s.isLoadingWorkspaces);
   const setLoadingWorkspaces = useHistoryStore((s) => s.setLoadingWorkspaces);
+  const error = useHistoryStore((s) => s.error);
   const setError = useHistoryStore((s) => s.setError);
   const removeWorkspace = useHistoryStore((s) => s.removeWorkspace);
   const removeSession = useHistoryStore((s) => s.removeSession);
@@ -30,8 +31,19 @@ export function Sidebar(): React.JSX.Element {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
+  // Manual retry counter to trigger re-fetch
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Abort controller for cancelling in-flight workspace fetch
+  const abortRef = useRef<AbortController | null>(null);
+
   // Load workspaces on mount and when sessionState changes (new session created)
   useEffect(() => {
+    // Cancel any in-flight fetch from a previous effect invocation
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     const load = async (): Promise<void> => {
       setLoadingWorkspaces(true);
       setError(null);
@@ -40,18 +52,22 @@ export function Sidebar(): React.JSX.Element {
           tenantId: tenantId ?? 'dev-tenant',
           userId: userId ?? 'dev-user',
         });
+        if (controller.signal.aborted) return;
         if (result.success) {
           setWorkspaces(result.data);
         } else {
           setError(result.error.message);
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Failed to load workspaces');
       }
       setLoadingWorkspaces(false);
     };
     void load();
-  }, [setWorkspaces, setLoadingWorkspaces, setError, tenantId, userId, sessionState]);
+
+    return () => controller.abort();
+  }, [setWorkspaces, setLoadingWorkspaces, setError, tenantId, userId, sessionState, retryCount]);
 
   // Load sessions when a workspace is expanded, and re-fetch when sessionState changes
   useEffect(() => {
@@ -198,6 +214,19 @@ export function Sidebar(): React.JSX.Element {
         <div className="space-y-0.5 p-2">
           {isLoadingWorkspaces ? (
             <p className="text-muted-foreground px-3 py-4 text-center text-xs">Loading...</p>
+          ) : error ? (
+            <div className="px-3 py-4 text-center">
+              <p className="text-muted-foreground text-xs">Could not load workspaces</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() => setRetryCount((c) => c + 1)}
+              >
+                <RefreshCw className="mr-1.5 h-3 w-3" />
+                Retry
+              </Button>
+            </div>
           ) : workspaces.length === 0 ? (
             <p className="text-muted-foreground px-3 py-4 text-center text-xs">No workspaces</p>
           ) : (
