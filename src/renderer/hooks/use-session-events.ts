@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { SessionEvent, ToolCallInfo } from '../../shared/types';
+import type { SessionEvent, ToolCallInfo, ToolCallType } from '../../shared/types';
 import type { ApprovalRequest } from '../../shared/types';
 import { useMessagesStore } from '../state/messages-store';
 import { useSessionStore } from '../state/session-store';
@@ -121,9 +121,16 @@ export function useSessionEvents(): void {
           const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
           const toolName = typeof p.toolName === 'string' ? p.toolName : undefined;
           if (toolCallId && toolName) {
+            const validToolTypes = new Set<ToolCallType>(['tool', 'agent', 'sub_agent', 'skill']);
+            const rawToolType = typeof p.toolType === 'string' ? p.toolType : undefined;
+            const toolType: ToolCallType | undefined =
+              rawToolType && validToolTypes.has(rawToolType as ToolCallType)
+                ? (rawToolType as ToolCallType)
+                : undefined;
             const toolCall: ToolCallInfo = {
               id: toolCallId,
               toolName,
+              toolType,
               status: 'running',
               arguments:
                 typeof p.arguments === 'object' && p.arguments !== null
