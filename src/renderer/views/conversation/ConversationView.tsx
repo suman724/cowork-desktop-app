@@ -3,6 +3,7 @@ import { ConversationHeader } from './ConversationHeader';
 import { ConversationFooter } from './ConversationFooter';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
+import { ResumeTaskBanner } from './ResumeTaskBanner';
 import { useSessionStore } from '../../state/session-store';
 import { useStartTask } from '../../hooks/use-start-task';
 import { useCancelTask } from '../../hooks/use-cancel-task';
@@ -15,7 +16,9 @@ export function ConversationView(): React.JSX.Element {
   const setViewingHistory = useSessionStore((s) => s.setViewingHistory);
   const setSessionState = useSessionStore((s) => s.setSessionState);
   const lastFailedPrompt = useSessionStore((s) => s.lastFailedPrompt);
-  const { startTask } = useStartTask();
+  const incompleteTask = useSessionStore((s) => s.incompleteTask);
+  const clearIncompleteTask = useSessionStore((s) => s.setIncompleteTask);
+  const { startTask, resumeTask } = useStartTask();
   const { cancelTask } = useCancelTask();
 
   const [isContinuing, setIsContinuing] = useState(false);
@@ -48,6 +51,12 @@ export function ConversationView(): React.JSX.Element {
         if (result.success) {
           setSessionState(result.data);
           setViewingHistory(false);
+
+          // Check for incomplete task from crash recovery
+          const stateResult = await window.coworkIPC.getSessionState({ sessionId });
+          if (stateResult.success && stateResult.data.incompleteTask) {
+            useSessionStore.getState().setIncompleteTask(stateResult.data.incompleteTask);
+          }
         }
       } catch {
         // Error handled by IPC wrapper
@@ -70,6 +79,13 @@ export function ConversationView(): React.JSX.Element {
         onRetry={handleRetry}
         canRetry={lastFailedPrompt !== null}
       />
+      {incompleteTask && !isTaskRunning && (
+        <ResumeTaskBanner
+          incompleteTask={incompleteTask}
+          onResume={() => void resumeTask(incompleteTask)}
+          onDismiss={() => clearIncompleteTask(null)}
+        />
+      )}
       {showContinueButton ? (
         <div className="border-t px-4 py-3">
           <Button

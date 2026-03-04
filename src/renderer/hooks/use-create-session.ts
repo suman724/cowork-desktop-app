@@ -38,6 +38,14 @@ export function useCreateSession(): UseCreateSession {
           setSessionState(sessionState);
           clearMessages();
           setView('conversation');
+
+          // Check for incomplete task from crash recovery
+          const stateResult = await window.coworkIPC.getSessionState({
+            sessionId: sessionState.sessionId,
+          });
+          if (stateResult.success && stateResult.data.incompleteTask) {
+            useSessionStore.getState().setIncompleteTask(stateResult.data.incompleteTask);
+          }
         } else {
           setError(result.error.message);
         }

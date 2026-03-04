@@ -1,5 +1,10 @@
 import { create } from 'zustand';
-import type { SessionState, TaskState, AgentRuntimeStatus } from '../../shared/types';
+import type {
+  SessionState,
+  TaskState,
+  AgentRuntimeStatus,
+  IncompleteTask,
+} from '../../shared/types';
 
 interface SessionStore {
   sessionState: SessionState | null;
@@ -12,6 +17,8 @@ interface SessionStore {
   isViewingHistory: boolean;
   /** Prompt from the last recoverable task failure (for retry) */
   lastFailedPrompt: string | null;
+  /** Incomplete task detected during crash recovery */
+  incompleteTask: IncompleteTask | null;
 
   setSessionState: (state: SessionState | null) => void;
   setTaskState: (state: TaskState | null) => void;
@@ -22,6 +29,7 @@ interface SessionStore {
   setWorkspacePath: (path: string | null) => void;
   setViewingHistory: (viewing: boolean) => void;
   setLastFailedPrompt: (prompt: string | null) => void;
+  setIncompleteTask: (task: IncompleteTask | null) => void;
   reset: () => void;
 }
 
@@ -33,6 +41,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   workspacePath: null,
   isViewingHistory: false,
   lastFailedPrompt: null,
+  incompleteTask: null,
 
   setSessionState: (sessionState) => set({ sessionState, error: null }),
   setTaskState: (taskState) => set({ taskState }),
@@ -49,6 +58,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setWorkspacePath: (workspacePath) => set({ workspacePath }),
   setViewingHistory: (isViewingHistory) => set({ isViewingHistory }),
   setLastFailedPrompt: (lastFailedPrompt) => set({ lastFailedPrompt }),
+  setIncompleteTask: (incompleteTask) => set({ incompleteTask }),
   reset: () =>
     set({
       sessionState: null,
@@ -58,5 +68,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
       workspacePath: null,
       isViewingHistory: false,
       lastFailedPrompt: null,
+      incompleteTask: null,
     }),
 }));

@@ -3,12 +3,21 @@ import type { ApprovalRequest, ConversationMessage, Workspace } from '@cowork/pl
 /** Agent runtime process status */
 export type AgentRuntimeStatus = 'stopped' | 'starting' | 'running' | 'crashed' | 'reconnecting';
 
+/** Incomplete task detected during crash recovery */
+export interface IncompleteTask {
+  taskId: string;
+  prompt: string;
+  lastStep: number;
+  maxSteps: number;
+}
+
 /** Session state as seen by the desktop app (matches CreateSession JSON-RPC response) */
 export interface SessionState {
   sessionId: string;
   workspaceId: string;
   logDir?: string;
   status: string;
+  incompleteTask?: IncompleteTask;
 }
 
 /** Task execution state */
