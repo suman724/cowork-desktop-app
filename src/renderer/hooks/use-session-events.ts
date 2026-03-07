@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { SessionEvent, ToolCallInfo, ToolCallType } from '../../shared/types';
+import type { SessionEvent, ToolCallInfo, ToolCallType, PlanStepInfo } from '../../shared/types';
 import type { ApprovalRequest } from '../../shared/types';
 import { useMessagesStore } from '../state/messages-store';
 import { useSessionStore } from '../state/session-store';
@@ -29,7 +29,17 @@ const EVENT_TYPE = {
   PLAN_MODE_CHANGED: 'plan_mode_changed',
   VERIFICATION_STARTED: 'verification_started',
   VERIFICATION_COMPLETED: 'verification_completed',
+  PLAN_UPDATED: 'plan_updated',
 } as const;
+
+const VALID_PLAN_STEP_STATUSES = new Set(['pending', 'in_progress', 'completed', 'skipped']);
+
+function parsePlanStepStatus(value: unknown): PlanStepInfo['status'] {
+  if (typeof value === 'string' && VALID_PLAN_STEP_STATUSES.has(value)) {
+    return value as PlanStepInfo['status'];
+  }
+  return 'pending';
+}
 
 /**
  * Runtime validation for ApprovalRequest payloads.
@@ -87,6 +97,7 @@ export function useSessionEvents(): void {
   const setLastFailedPrompt = useSessionStore((s) => s.setLastFailedPrompt);
   const setPlanMode = useSessionStore((s) => s.setPlanMode);
   const setVerifying = useSessionStore((s) => s.setVerifying);
+  const setPlan = useSessionStore((s) => s.setPlan);
 
   const addApproval = useApprovalStore((s) => s.addApproval);
 
@@ -266,6 +277,22 @@ export function useSessionEvents(): void {
           break;
         }
 
+        case EVENT_TYPE.PLAN_UPDATED: {
+          const goal = typeof p.goal === 'string' ? p.goal : '';
+          const rawSteps = Array.isArray(p.steps) ? (p.steps as unknown[]) : [];
+          const steps: PlanStepInfo[] = rawSteps
+            .filter((s): s is Record<string, unknown> => typeof s === 'object' && s !== null)
+            .map((s) => ({
+              index: typeof s.index === 'number' ? s.index : 0,
+              description: typeof s.description === 'string' ? s.description : '',
+              status: parsePlanStepStatus(s.status),
+            }));
+          if (goal) {
+            setPlan({ goal, steps });
+          }
+          break;
+        }
+
         default:
           // Unknown event type — ignore
           break;
@@ -285,6 +312,7 @@ export function useSessionEvents(): void {
     setLastFailedPrompt,
     setPlanMode,
     setVerifying,
+    setPlan,
     addApproval,
   ]);
 }

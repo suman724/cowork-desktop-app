@@ -4,6 +4,7 @@ import type {
   TaskState,
   AgentRuntimeStatus,
   IncompleteTask,
+  PlanInfo,
 } from '../../shared/types';
 
 interface SessionStore {
@@ -23,6 +24,8 @@ interface SessionStore {
   planMode: boolean;
   /** Whether the agent is currently in the verification phase */
   isVerifying: boolean;
+  /** Current agent plan (null when no plan exists) */
+  plan: PlanInfo | null;
 
   setSessionState: (state: SessionState | null) => void;
   setTaskState: (state: TaskState | null) => void;
@@ -36,6 +39,7 @@ interface SessionStore {
   setIncompleteTask: (task: IncompleteTask | null) => void;
   setPlanMode: (planMode: boolean) => void;
   setVerifying: (verifying: boolean) => void;
+  setPlan: (plan: PlanInfo | null) => void;
   updateSessionName: (name: string) => void;
   reset: () => void;
 }
@@ -51,6 +55,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   incompleteTask: null,
   planMode: false,
   isVerifying: false,
+  plan: null,
 
   setSessionState: (sessionState) => set({ sessionState, error: null }),
   setTaskState: (taskState) => set({ taskState }),
@@ -70,6 +75,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setIncompleteTask: (incompleteTask) => set({ incompleteTask }),
   setPlanMode: (planMode) => set({ planMode }),
   setVerifying: (isVerifying) => set({ isVerifying }),
+  setPlan: (plan) => set({ plan }),
   updateSessionName: (name) =>
     set((state) => ({
       sessionState: state.sessionState ? { ...state.sessionState, name } : null,
@@ -86,5 +92,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
       incompleteTask: null,
       planMode: false,
       isVerifying: false,
+      plan: null,
     }),
 }));

@@ -101,6 +101,19 @@ export interface ToolCallInfo {
   error?: string;
 }
 
+/** A single step in the agent's plan */
+export interface PlanStepInfo {
+  index: number;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'skipped';
+}
+
+/** Agent plan state for display */
+export interface PlanInfo {
+  goal: string;
+  steps: PlanStepInfo[];
+}
+
 /** Session event received from agent runtime via JSON-RPC notification */
 export interface SessionEvent {
   eventType: string;
