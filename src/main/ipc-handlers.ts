@@ -132,6 +132,7 @@ export function registerIpcHandlers(
           maxSteps?: number;
           allowNetwork?: boolean;
           approvalMode?: 'always' | 'on_risky_actions' | 'never';
+          planOnly?: boolean;
         };
       },
     ) => {

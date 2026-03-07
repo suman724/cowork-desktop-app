@@ -21,7 +21,7 @@ describe('PromptInput', () => {
     await user.type(input, '  Hello world  ');
     await user.click(screen.getByTestId('send-button'));
 
-    expect(onSubmit).toHaveBeenCalledWith('Hello world');
+    expect(onSubmit).toHaveBeenCalledWith('Hello world', undefined);
   });
 
   it('calls onSubmit on Enter (without Shift)', async () => {
@@ -33,7 +33,7 @@ describe('PromptInput', () => {
     const input = screen.getByTestId('prompt-input');
     await user.type(input, 'Hello{Enter}');
 
-    expect(onSubmit).toHaveBeenCalledWith('Hello');
+    expect(onSubmit).toHaveBeenCalledWith('Hello', undefined);
   });
 
   it('does not submit on Shift+Enter', async () => {
@@ -63,6 +63,30 @@ describe('PromptInput', () => {
 
     expect(screen.getByTestId('prompt-input')).toBeDisabled();
     expect(screen.getByTestId('send-button')).toBeDisabled();
+  });
+
+  it('renders plan-only toggle button', () => {
+    render(<PromptInput onSubmit={vi.fn()} />);
+
+    expect(screen.getByTestId('plan-only-toggle')).toBeInTheDocument();
+    expect(screen.getByLabelText('Plan first')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('passes planOnly option when toggle is active', async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+
+    render(<PromptInput onSubmit={onSubmit} />);
+
+    // Toggle plan mode on
+    await user.click(screen.getByTestId('plan-only-toggle'));
+    expect(screen.getByTestId('plan-only-toggle')).toHaveAttribute('aria-pressed', 'true');
+
+    // Submit
+    const input = screen.getByTestId('prompt-input');
+    await user.type(input, 'Build a feature{Enter}');
+
+    expect(onSubmit).toHaveBeenCalledWith('Build a feature', { planOnly: true });
   });
 
   it('clears input after submit', async () => {

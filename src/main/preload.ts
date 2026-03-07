@@ -39,6 +39,7 @@ export interface CoworkIPC {
       maxSteps?: number;
       allowNetwork?: boolean;
       approvalMode?: 'always' | 'on_risky_actions' | 'never';
+      planOnly?: boolean;
     };
   }) => Promise<IpcResponse<void>>;
 

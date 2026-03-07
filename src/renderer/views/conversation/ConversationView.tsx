@@ -31,8 +31,8 @@ export function ConversationView(): React.JSX.Element {
   }, [lastFailedPrompt, startTask]);
 
   const handleSubmit = useCallback(
-    (prompt: string) => {
-      void startTask(prompt);
+    (prompt: string, options?: { planOnly?: boolean }) => {
+      void startTask(prompt, options);
     },
     [startTask],
   );

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SidebarSessionItem } from '../../../src/renderer/components/SidebarSessionItem';
 import { useHistoryStore } from '../../../src/renderer/state/history-store';
+import { useSessionStore } from '../../../src/renderer/state/session-store';
 import type { SessionSummary } from '../../../src/shared/types';
 
 // Mock window.coworkIPC
@@ -30,6 +31,7 @@ describe('SidebarSessionItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useHistoryStore.getState().reset();
+    useSessionStore.getState().reset();
     useHistoryStore.getState().setSessions([baseSession] as never);
   });
 
@@ -84,6 +86,61 @@ describe('SidebarSessionItem', () => {
       const session = useHistoryStore.getState().sessions[0];
       expect(session?.name).toBe('Renamed Session');
     });
+  });
+
+  it('updates session store name when renaming the active session', async () => {
+    mockUpdateSessionName.mockResolvedValue({ success: true, data: undefined });
+
+    // Set the active session to match the sidebar item
+    useSessionStore.getState().setSessionState({
+      sessionId: 'sess-1',
+      workspaceId: 'ws-1',
+      status: 'active',
+      name: 'Test Session',
+    });
+
+    render(<SidebarSessionItem session={baseSession} onClick={vi.fn()} onDelete={vi.fn()} />);
+
+    await user.click(screen.getByLabelText('Session options'));
+    await user.click(screen.getByText('Rename'));
+
+    const input = screen.getByLabelText('Session name');
+    await user.clear(input);
+    await user.type(input, 'Updated Name');
+    await user.click(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionState?.name).toBe('Updated Name');
+    });
+  });
+
+  it('does not update session store when renaming a different session', async () => {
+    mockUpdateSessionName.mockResolvedValue({ success: true, data: undefined });
+
+    // Set a different active session
+    useSessionStore.getState().setSessionState({
+      sessionId: 'sess-OTHER',
+      workspaceId: 'ws-1',
+      status: 'active',
+      name: 'Other Session',
+    });
+
+    render(<SidebarSessionItem session={baseSession} onClick={vi.fn()} onDelete={vi.fn()} />);
+
+    await user.click(screen.getByLabelText('Session options'));
+    await user.click(screen.getByText('Rename'));
+
+    const input = screen.getByLabelText('Session name');
+    await user.clear(input);
+    await user.type(input, 'New Name');
+    await user.click(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(mockUpdateSessionName).toHaveBeenCalled();
+    });
+
+    // Active session name should NOT change
+    expect(useSessionStore.getState().sessionState?.name).toBe('Other Session');
   });
 
   it('shows error when IPC call fails', async () => {
