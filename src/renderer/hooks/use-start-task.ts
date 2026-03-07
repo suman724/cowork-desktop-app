@@ -93,6 +93,8 @@ export function useStartTask(): UseStartTask {
 
         const taskId = `task-${Date.now()}`;
         const settings = useUIStore.getState().settings;
+        // Clamp to match agent runtime's enforced range (1-200)
+        const clampedMaxSteps = Math.max(1, Math.min(200, settings.maxStepsPerTask));
         addUserMessage(prompt);
 
         setTaskState({
@@ -100,7 +102,7 @@ export function useStartTask(): UseStartTask {
           sessionId,
           prompt,
           currentStep: 0,
-          maxSteps: settings.maxStepsPerTask,
+          maxSteps: clampedMaxSteps,
           isRunning: true,
         });
         useSessionStore.getState().setLastFailedPrompt(null);
@@ -116,7 +118,7 @@ export function useStartTask(): UseStartTask {
           taskId,
           prompt,
           taskOptions: {
-            maxSteps: settings.maxStepsPerTask,
+            maxSteps: clampedMaxSteps,
             approvalMode: settings.approvalMode,
           },
         });
@@ -161,6 +163,8 @@ export function useStartTask(): UseStartTask {
         }
 
         const settings = useUIStore.getState().settings;
+        // Use the checkpoint's maxSteps (not current settings) for consistency
+        const resumeMaxSteps = Math.max(1, Math.min(200, task.maxSteps));
 
         // Do NOT add a user message — the checkpoint already has it
         setTaskState({
@@ -168,7 +172,7 @@ export function useStartTask(): UseStartTask {
           sessionId,
           prompt: task.prompt,
           currentStep: task.lastStep,
-          maxSteps: task.maxSteps,
+          maxSteps: resumeMaxSteps,
           isRunning: true,
         });
         useSessionStore.getState().setIncompleteTask(null);
@@ -179,7 +183,7 @@ export function useStartTask(): UseStartTask {
           taskId: task.taskId,
           prompt: task.prompt,
           taskOptions: {
-            maxSteps: settings.maxStepsPerTask,
+            maxSteps: resumeMaxSteps,
             approvalMode: settings.approvalMode,
           },
         });

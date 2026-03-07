@@ -163,8 +163,8 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps): React.JSX.Element
             Arguments
           </button>
           {argsExpanded && (
-            <pre className="bg-muted text-muted-foreground mt-1 max-h-32 overflow-auto rounded p-1.5 text-[11px]">
-              {JSON.stringify(toolCall.arguments, null, 2).slice(0, 500)}
+            <pre className="bg-muted text-muted-foreground mt-1 max-h-64 overflow-auto rounded p-1.5 text-[11px] break-words whitespace-pre-wrap">
+              {JSON.stringify(toolCall.arguments, null, 2)}
             </pre>
           )}
         </div>
@@ -175,8 +175,8 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps): React.JSX.Element
 
       {/* Result display (shown when present, no toggle needed) */}
       {toolCall.result && (
-        <pre className="bg-muted text-muted-foreground mt-1.5 max-h-32 overflow-auto rounded p-1.5 text-[11px]">
-          {toolCall.result.slice(0, 500)}
+        <pre className="bg-muted text-muted-foreground mt-1.5 max-h-64 overflow-auto rounded p-1.5 text-[11px] break-words whitespace-pre-wrap">
+          {toolCall.result}
         </pre>
       )}
     </div>
