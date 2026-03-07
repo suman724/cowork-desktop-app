@@ -8,6 +8,7 @@ import { useUIStore } from '../../state/ui-store';
 export function ConversationHeader(): React.JSX.Element {
   const agentRuntimeStatus = useSessionStore((s) => s.agentRuntimeStatus);
   const workspacePath = useSessionStore((s) => s.workspacePath);
+  const sessionName = useSessionStore((s) => s.sessionState?.name);
   const isRunning = useSessionStore((s) => s.taskState?.isRunning ?? false);
   const setView = useUIStore((s) => s.setView);
 
@@ -15,10 +16,12 @@ export function ConversationHeader(): React.JSX.Element {
     ? (workspacePath.split('/').filter(Boolean).pop() ?? workspacePath)
     : null;
 
+  const title = sessionName || folderName || 'Conversation';
+
   return (
     <div className="flex items-center justify-between border-b px-4 py-2 shadow-sm">
       <div className="flex items-center gap-3">
-        <h1 className="text-sm font-semibold">{folderName ?? 'Conversation'}</h1>
+        <h1 className="text-sm font-semibold">{title}</h1>
         {isRunning && (
           <Badge variant="secondary" className="animate-pulse gap-1.5">
             <span className="bg-primary h-1.5 w-1.5 rounded-full" />

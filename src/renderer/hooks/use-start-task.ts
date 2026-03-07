@@ -105,6 +105,12 @@ export function useStartTask(): UseStartTask {
         });
         useSessionStore.getState().setLastFailedPrompt(null);
 
+        // Auto-name session from first prompt (instant local feedback)
+        if (!useSessionStore.getState().sessionState?.name) {
+          const autoName = prompt.length > 60 ? prompt.slice(0, 57) + '...' : prompt;
+          useSessionStore.getState().updateSessionName(autoName.trim());
+        }
+
         const result = await window.coworkIPC.startTask({
           sessionId,
           taskId,

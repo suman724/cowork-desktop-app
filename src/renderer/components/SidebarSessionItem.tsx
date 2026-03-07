@@ -39,7 +39,7 @@ export function SidebarSessionItem({
       <div className="group hover:bg-accent flex w-full items-center rounded-md text-left text-xs transition-colors">
         <button onClick={onClick} className="min-w-0 flex-1 px-3 py-1">
           <div className="flex items-center justify-between">
-            <span className="truncate">{session.sessionId.slice(0, 12)}</span>
+            <span className="truncate">{session.name || session.sessionId.slice(0, 12)}</span>
             <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
               {session.taskCount}
             </Badge>

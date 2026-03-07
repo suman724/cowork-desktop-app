@@ -15,6 +15,7 @@ export interface IncompleteTask {
 export interface SessionState {
   sessionId: string;
   workspaceId: string;
+  name?: string;
   logDir?: string;
   status: string;
   incompleteTask?: IncompleteTask;
@@ -118,6 +119,8 @@ export interface WorkspaceSummary {
 /** Session summary as returned by GET /workspaces/{workspaceId}/sessions */
 export interface SessionSummary {
   sessionId: string;
+  name?: string;
+  autoNamed?: boolean;
   createdAt: string;
   lastTaskAt: string;
   taskCount: number;

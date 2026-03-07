@@ -23,6 +23,8 @@ const EVENT_TYPE = {
   POLICY_EXPIRED: 'policy_expired',
   TASK_COMPLETED: 'task_completed',
   TASK_FAILED: 'task_failed',
+  TASK_STARTED: 'task_started',
+  TASK_CANCELLED: 'task_cancelled',
   LLM_RETRY: 'llm_retry',
 } as const;
 
@@ -198,6 +200,18 @@ export function useSessionEvents(): void {
         case EVENT_TYPE.TASK_COMPLETED: {
           finishStreaming();
           setTaskRunning(false);
+          break;
+        }
+
+        case EVENT_TYPE.TASK_STARTED: {
+          // Informational — task state is already set by useStartTask
+          break;
+        }
+
+        case EVENT_TYPE.TASK_CANCELLED: {
+          finishStreaming();
+          setTaskRunning(false);
+          addSystemMessage('Task cancelled', 'info');
           break;
         }
 

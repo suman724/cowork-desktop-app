@@ -30,6 +30,7 @@ interface SessionStore {
   setViewingHistory: (viewing: boolean) => void;
   setLastFailedPrompt: (prompt: string | null) => void;
   setIncompleteTask: (task: IncompleteTask | null) => void;
+  updateSessionName: (name: string) => void;
   reset: () => void;
 }
 
@@ -59,6 +60,10 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setViewingHistory: (isViewingHistory) => set({ isViewingHistory }),
   setLastFailedPrompt: (lastFailedPrompt) => set({ lastFailedPrompt }),
   setIncompleteTask: (incompleteTask) => set({ incompleteTask }),
+  updateSessionName: (name) =>
+    set((state) => ({
+      sessionState: state.sessionState ? { ...state.sessionState, name } : null,
+    })),
   reset: () =>
     set({
       sessionState: null,
