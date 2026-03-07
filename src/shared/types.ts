@@ -50,6 +50,7 @@ export interface AppSettings {
   maxStepsPerTask: number;
   theme: 'light' | 'dark' | 'system';
   workspaceServiceUrl: string;
+  sessionServiceUrl: string;
   networkTimeoutMs: number;
   tenantId?: string;
   userId?: string;
@@ -61,6 +62,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxStepsPerTask: 40,
   theme: 'system',
   workspaceServiceUrl: 'http://localhost:8002',
+  sessionServiceUrl: 'http://localhost:8001',
   networkTimeoutMs: 30_000,
   tenantId: 'dev-tenant',
   userId: 'dev-user',

@@ -91,6 +91,31 @@ describe('useHistoryStore', () => {
     expect(sessions.map((s) => s.sessionId)).toEqual(['ss-1', 'ss-3']);
   });
 
+  it('renames a session by id', () => {
+    useHistoryStore.getState().setSessions([
+      { sessionId: 'ss-1', name: 'Old Name', autoNamed: true },
+      { sessionId: 'ss-2', name: 'Other' },
+    ] as never);
+
+    useHistoryStore.getState().renameSession('ss-1', 'New Name');
+
+    const sessions = useHistoryStore.getState().sessions;
+    expect(sessions[0]?.name).toBe('New Name');
+    expect(sessions[0]?.autoNamed).toBe(false);
+    // Other session untouched
+    expect(sessions[1]?.name).toBe('Other');
+  });
+
+  it('renameSession is a no-op for non-existent session', () => {
+    useHistoryStore.getState().setSessions([{ sessionId: 'ss-1', name: 'Name' }] as never);
+
+    useHistoryStore.getState().renameSession('ss-999', 'New Name');
+
+    const sessions = useHistoryStore.getState().sessions;
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]?.name).toBe('Name');
+  });
+
   it('resets all state', () => {
     useHistoryStore.getState().setWorkspaces([{ workspaceId: 'ws-1' }] as never);
     useHistoryStore.getState().setSelectedWorkspaceId('ws-1');

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
 import {
@@ -18,7 +18,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { useHistoryStore } from '../state/history-store';
 import type { SessionSummary } from '../../shared/types';
+
+const MAX_SESSION_NAME_LENGTH = 200;
 
 interface SidebarSessionItemProps {
   session: SessionSummary;
@@ -32,7 +45,51 @@ export function SidebarSessionItem({
   onDelete,
 }: SidebarSessionItemProps): React.JSX.Element {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const renameSession = useHistoryStore((s) => s.renameSession);
+
+  useEffect(() => {
+    if (showRenameDialog) {
+      setRenameValue(session.name ?? '');
+      setRenameError(null);
+    }
+  }, [showRenameDialog, session.name]);
+
+  const handleRenameSubmit = async (): Promise<void> => {
+    const trimmed = renameValue.trim();
+    if (trimmed.length === 0) {
+      setRenameError('Name cannot be empty');
+      return;
+    }
+    if (trimmed.length > MAX_SESSION_NAME_LENGTH) {
+      setRenameError(`Name must be ${MAX_SESSION_NAME_LENGTH} characters or less`);
+      return;
+    }
+
+    setIsRenaming(true);
+    setRenameError(null);
+    try {
+      const result = await window.coworkIPC.updateSessionName({
+        sessionId: session.sessionId,
+        name: trimmed,
+      });
+      if (result.success) {
+        renameSession(session.sessionId, trimmed);
+        setShowRenameDialog(false);
+      } else {
+        setRenameError(result.error.message);
+      }
+    } catch {
+      setRenameError('Failed to rename session');
+    } finally {
+      setIsRenaming(false);
+    }
+  };
 
   return (
     <>
@@ -59,6 +116,10 @@ export function SidebarSessionItem({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="bottom">
+              <DropdownMenuItem onClick={() => setShowRenameDialog(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Rename
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => setShowDeleteDialog(true)}
@@ -70,6 +131,45 @@ export function SidebarSessionItem({
           </DropdownMenu>
         )}
       </div>
+
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename session</DialogTitle>
+            <DialogDescription>Enter a new name for this session.</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleRenameSubmit();
+            }}
+          >
+            <Input
+              ref={inputRef}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              maxLength={MAX_SESSION_NAME_LENGTH}
+              placeholder="Session name"
+              autoFocus
+              aria-label="Session name"
+            />
+            {renameError && <p className="text-destructive mt-2 text-sm">{renameError}</p>}
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRenameDialog(false)}
+                disabled={isRenaming}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isRenaming}>
+                {isRenaming ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

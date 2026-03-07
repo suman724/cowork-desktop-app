@@ -4,6 +4,7 @@ import { IPC_CHANNELS } from '../shared/ipc-channels';
 import type { IpcResponse, AppSettings } from '../shared/types';
 import type { AgentRuntimeManager } from './agent-runtime';
 import type { WorkspaceServiceClient } from './workspace-client';
+import type { SessionServiceClient } from './session-client';
 import type { SettingsStore } from './settings-store';
 import type { JsonRpcError } from './json-rpc-client';
 
@@ -38,6 +39,7 @@ function rpcError(err: unknown): IpcResponse<never> {
 export function registerIpcHandlers(
   runtime: AgentRuntimeManager,
   workspaceClient: WorkspaceServiceClient,
+  sessionClient: SessionServiceClient,
   settingsStore: SettingsStore,
 ): void {
   // --- Session lifecycle ---
@@ -283,6 +285,22 @@ export function registerIpcHandlers(
     },
   );
 
+  // --- Session Service ---
+  ipcMain.handle(
+    IPC_CHANNELS.SESSION_UPDATE_NAME,
+    async (_event, params: { sessionId: string; name: string }) => {
+      try {
+        await sessionClient.updateSessionName(params.sessionId, params.name, false);
+        return success(undefined);
+      } catch (err) {
+        return failure(
+          'SESSION_ERROR',
+          err instanceof Error ? err.message : 'Failed to update session name',
+        );
+      }
+    },
+  );
+
   // --- Settings ---
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => {
     return success(settingsStore.get());
@@ -294,6 +312,13 @@ export function registerIpcHandlers(
     if (params.workspaceServiceUrl !== undefined || params.networkTimeoutMs !== undefined) {
       workspaceClient.updateConfig({
         baseUrl: updated.workspaceServiceUrl,
+        timeoutMs: updated.networkTimeoutMs,
+      });
+    }
+    // Update session client config when URL changes
+    if (params.sessionServiceUrl !== undefined || params.networkTimeoutMs !== undefined) {
+      sessionClient.updateConfig({
+        baseUrl: updated.sessionServiceUrl,
         timeoutMs: updated.networkTimeoutMs,
       });
     }

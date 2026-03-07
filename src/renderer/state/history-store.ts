@@ -17,6 +17,7 @@ interface HistoryStore {
   setError: (error: string | null) => void;
   removeWorkspace: (workspaceId: string) => void;
   removeSession: (sessionId: string) => void;
+  renameSession: (sessionId: string, name: string) => void;
   reset: () => void;
 }
 
@@ -43,6 +44,12 @@ export const useHistoryStore = create<HistoryStore>((set) => ({
   removeSession: (sessionId) =>
     set((state) => ({
       sessions: state.sessions.filter((s) => s.sessionId !== sessionId),
+    })),
+  renameSession: (sessionId, name) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.sessionId === sessionId ? { ...s, name, autoNamed: false } : s,
+      ),
     })),
   reset: () =>
     set({
