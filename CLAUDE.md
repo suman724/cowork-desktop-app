@@ -21,13 +21,13 @@ The app follows a strict main/renderer process split with a typed preload bridge
 
 **Renderer process** (`src/renderer/`) — React 19, sandboxed, no Node.js APIs:
 - `App.tsx` — View router, global event hooks, approval modal overlay
-- `state/` — 5 Zustand stores: session (includes `planMode`, `isVerifying`), messages (streaming accumulation), approval (FIFO queue), history, ui
+- `state/` — 5 Zustand stores: session (includes `planMode`, `isVerifying`, `plan: PlanInfo | null`), messages (streaming accumulation), approval (FIFO queue), history, ui
 - `hooks/` — 11 hooks: 2 event dispatchers (`useSessionEvents`, `useAgentRuntimeEvents`) + 9 IPC wrappers with loading/error state
-- `views/` — 5 view groups: conversation (8 components including MarkdownRenderer), history (6), approval (2), patch (3), settings (1)
+- `views/` — 5 view groups: conversation (9 components including MarkdownRenderer and PlanPanel), history (6), approval (2), patch (3), settings (1)
 - `components/` — Shared: `ErrorBoundary`, `ThemeProvider`, `AppLayout`, `StatusIndicator` + 17 shadcn/ui primitives in `ui/`
 
 **Shared** (`src/shared/`) — Imported by both processes:
-- `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent`, `AppSettings` + re-exports from `@cowork/platform`
+- `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent`, `AppSettings`, `PlanInfo`, `PlanStepInfo` + re-exports from `@cowork/platform`
 - `ipc-channels.ts` — `IPC_CHANNELS` (15 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
 
 ## Key Constraints
@@ -39,7 +39,8 @@ The app follows a strict main/renderer process split with a typed preload bridge
 - **Streaming text accumulation in Zustand** — `text_chunk` events append to current assistant message via `messagesStore.appendTextChunk()`.
 - **Settings validation** — `SettingsStore.update()` clamps numeric ranges and rejects invalid enum values via `validateSettings()`.
 - **JSON-RPC version validation** — `JsonRpcClient` validates `jsonrpc: '2.0'` on all incoming messages before processing.
-- **Event payload runtime validation** — `use-session-events.ts` uses `typeof` checks on every payload field instead of unsafe `as` casts.
+- **Event payload runtime validation** — `use-session-events.ts` uses `typeof` checks on every payload field instead of unsafe `as` casts. Handles `plan_updated` events by validating the payload and calling `sessionStore.setPlan()`.
+- **PlanPanel** — collapsible panel rendered between `ConversationHeader` and `MessageList`, showing plan goal with progress counter [completed/total] and step list with status icons (spinner=in_progress, check=completed, ban=skipped, circle=pending). Skipped steps shown with strikethrough. Auto-collapses at 7+ steps. Plan state (`PlanInfo | null`) stored in session-store, cleared on task reset.
 - All views read/write through Zustand stores for consistent UI state.
 
 ## IPC Channels
@@ -126,7 +127,7 @@ cowork-desktop-app/
       preload.d.ts           # window.coworkIPC type declaration
       lib/utils.ts           # cn() utility (shadcn)
       state/                 # 5 Zustand stores
-        session-store.ts     # Session, task state, runtime status
+        session-store.ts     # Session, task state, runtime status, plan progress
         messages-store.ts    # Messages, streaming accumulation, tool cards
         approval-store.ts    # FIFO approval queue
         history-store.ts     # Workspaces, sessions, loading flags
@@ -145,7 +146,7 @@ cowork-desktop-app/
         use-settings.ts
       views/
         conversation/        # MessageList, MessageItem, MarkdownRenderer, ToolCallCard,
-                             # PromptInput, Header, Footer, ConversationView
+                             # PlanPanel, PromptInput, Header, Footer, ConversationView
         history/             # WorkspaceList/Item, SessionList/Item,
                              # HistoryHeader, HistoryView
         approval/            # ApprovalDialog, RiskLevelBadge
