@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxStepsPerTask: 40,
   theme: 'system',
   workspaceServiceUrl: 'http://localhost:8002',
-  sessionServiceUrl: 'http://localhost:8001',
+  sessionServiceUrl: 'http://localhost:8000',
   networkTimeoutMs: 30_000,
   tenantId: 'dev-tenant',
   userId: 'dev-user',
