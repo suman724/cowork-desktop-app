@@ -5,8 +5,12 @@ import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
 import { useUIStore } from '../state/ui-store';
 
+interface StartTaskOptions {
+  planOnly?: boolean;
+}
+
 interface UseStartTask {
-  startTask: (prompt: string) => Promise<void>;
+  startTask: (prompt: string, options?: StartTaskOptions) => Promise<void>;
   resumeTask: (task: IncompleteTask) => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -70,7 +74,7 @@ export function useStartTask(): UseStartTask {
   const addUserMessage = useMessagesStore((s) => s.addUserMessage);
 
   const startTask = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, options?: StartTaskOptions) => {
       if (!useSessionStore.getState().sessionState) {
         setError('No active session');
         return;
@@ -120,6 +124,7 @@ export function useStartTask(): UseStartTask {
           taskOptions: {
             maxSteps: clampedMaxSteps,
             approvalMode: settings.approvalMode,
+            ...(options?.planOnly ? { planOnly: true } : {}),
           },
         });
 

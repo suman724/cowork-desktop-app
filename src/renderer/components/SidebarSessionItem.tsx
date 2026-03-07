@@ -29,6 +29,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useHistoryStore } from '../state/history-store';
+import { useSessionStore } from '../state/session-store';
 import type { SessionSummary } from '../../shared/types';
 
 const MAX_SESSION_NAME_LENGTH = 200;
@@ -52,6 +53,8 @@ export function SidebarSessionItem({
   const [isRenaming, setIsRenaming] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const renameSession = useHistoryStore((s) => s.renameSession);
+  const updateSessionName = useSessionStore((s) => s.updateSessionName);
+  const activeSessionId = useSessionStore((s) => s.sessionState?.sessionId);
 
   useEffect(() => {
     if (showRenameDialog) {
@@ -80,6 +83,9 @@ export function SidebarSessionItem({
       });
       if (result.success) {
         renameSession(session.sessionId, trimmed);
+        if (session.sessionId === activeSessionId) {
+          updateSessionName(trimmed);
+        }
         setShowRenameDialog(false);
       } else {
         setRenameError(result.error.message);
