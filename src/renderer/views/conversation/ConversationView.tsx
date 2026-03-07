@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ConversationHeader } from './ConversationHeader';
+import { PlanPanel } from './PlanPanel';
 import { ConversationFooter } from './ConversationFooter';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
@@ -73,6 +74,7 @@ export function ConversationView(): React.JSX.Element {
   return (
     <div className="flex h-full flex-col">
       <ConversationHeader />
+      <PlanPanel />
       <MessageList />
       <ConversationFooter
         onCancel={handleCancel}

@@ -97,7 +97,7 @@ const SHELL_TOOLS = new Set(['RunCommand']);
 const NETWORK_TOOLS = new Set(['HttpRequest', 'FetchUrl', 'WebSearch']);
 
 /** Agent-internal tools */
-const AGENT_TOOLS = new Set(['TaskTracker', 'CreatePlan']);
+const AGENT_TOOLS = new Set(['TaskTracker', 'CreatePlan', 'UpdatePlanStep']);
 
 /**
  * Resolve tool category from toolType (preferred) or toolName (fallback).
