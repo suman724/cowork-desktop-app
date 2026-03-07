@@ -36,6 +36,10 @@ function validateSettings(raw: Record<string, unknown>): AppSettings {
     settings.workspaceServiceUrl = raw.workspaceServiceUrl;
   }
 
+  if (typeof raw.sessionServiceUrl === 'string' && raw.sessionServiceUrl.length > 0) {
+    settings.sessionServiceUrl = raw.sessionServiceUrl;
+  }
+
   if (typeof raw.tenantId === 'string' && raw.tenantId.length > 0) {
     settings.tenantId = raw.tenantId;
   }

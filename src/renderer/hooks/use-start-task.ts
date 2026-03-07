@@ -1,11 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
 // IPC types are inferred from window.coworkIPC
+import type { IncompleteTask } from '../../shared/types';
 import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
 import { useUIStore } from '../state/ui-store';
 
 interface UseStartTask {
   startTask: (prompt: string) => Promise<void>;
+  resumeTask: (task: IncompleteTask) => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
@@ -103,6 +105,12 @@ export function useStartTask(): UseStartTask {
         });
         useSessionStore.getState().setLastFailedPrompt(null);
 
+        // Auto-name session from first prompt (instant local feedback)
+        if (!useSessionStore.getState().sessionState?.name) {
+          const autoName = prompt.length > 60 ? prompt.slice(0, 57) + '...' : prompt;
+          useSessionStore.getState().updateSessionName(autoName.trim());
+        }
+
         const result = await window.coworkIPC.startTask({
           sessionId,
           taskId,
@@ -131,5 +139,68 @@ export function useStartTask(): UseStartTask {
     [setTaskState, addUserMessage],
   );
 
-  return { startTask, isLoading, error };
+  const resumeTask = useCallback(
+    async (task: IncompleteTask) => {
+      if (!useSessionStore.getState().sessionState) {
+        setError('No active session');
+        return;
+      }
+
+      if (loadingRef.current) return;
+
+      loadingRef.current = true;
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const sessionId = await ensureRuntimeSession();
+        if (!sessionId) {
+          setError('Failed to create session');
+          useMessagesStore.getState().addSystemMessage('Error: Failed to create session');
+          return;
+        }
+
+        const settings = useUIStore.getState().settings;
+
+        // Do NOT add a user message — the checkpoint already has it
+        setTaskState({
+          taskId: task.taskId,
+          sessionId,
+          prompt: task.prompt,
+          currentStep: task.lastStep,
+          maxSteps: task.maxSteps,
+          isRunning: true,
+        });
+        useSessionStore.getState().setIncompleteTask(null);
+        useSessionStore.getState().setLastFailedPrompt(null);
+
+        const result = await window.coworkIPC.startTask({
+          sessionId,
+          taskId: task.taskId,
+          prompt: task.prompt,
+          taskOptions: {
+            maxSteps: settings.maxStepsPerTask,
+            approvalMode: settings.approvalMode,
+          },
+        });
+
+        if (!result.success) {
+          setError(result.error.message);
+          useMessagesStore.getState().addSystemMessage(`Error: ${result.error.message}`);
+          useSessionStore.getState().setTaskRunning(false);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        setError(message);
+        useMessagesStore.getState().addSystemMessage(`Error: ${message}`);
+        useSessionStore.getState().setTaskRunning(false);
+      } finally {
+        loadingRef.current = false;
+        setIsLoading(false);
+      }
+    },
+    [setTaskState],
+  );
+
+  return { startTask, resumeTask, isLoading, error };
 }

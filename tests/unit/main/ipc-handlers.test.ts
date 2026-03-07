@@ -43,6 +43,10 @@ describe('registerIpcHandlers', () => {
     getSessionHistory: ReturnType<typeof vi.fn>;
     updateConfig: ReturnType<typeof vi.fn>;
   };
+  let mockSessionClient: {
+    updateSessionName: ReturnType<typeof vi.fn>;
+    updateConfig: ReturnType<typeof vi.fn>;
+  };
   let mockSettingsStore: {
     get: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
@@ -75,6 +79,11 @@ describe('registerIpcHandlers', () => {
       updateConfig: vi.fn(),
     };
 
+    mockSessionClient = {
+      updateSessionName: vi.fn().mockResolvedValue(undefined),
+      updateConfig: vi.fn(),
+    };
+
     mockSettingsStore = {
       get: vi.fn().mockReturnValue({
         theme: 'system',
@@ -95,6 +104,7 @@ describe('registerIpcHandlers', () => {
     registerIpcHandlers(
       mockRuntime as never,
       mockWorkspaceClient as never,
+      mockSessionClient as never,
       mockSettingsStore as never,
     );
   });
@@ -292,6 +302,30 @@ describe('registerIpcHandlers', () => {
     expect(result).toEqual({ success: true, data: [{ role: 'user', content: 'hi' }] });
   });
 
+  // --- Session Service ---
+
+  it('session:update-name calls sessionClient and returns success', async () => {
+    const handler = handlers.get(IPC_CHANNELS.SESSION_UPDATE_NAME)!;
+    const result = await handler({}, { sessionId: 'sess-1', name: 'New Name' });
+
+    expect(mockSessionClient.updateSessionName).toHaveBeenCalledWith('sess-1', 'New Name', false);
+    expect(result).toEqual({ success: true, data: undefined });
+  });
+
+  it('session:update-name returns failure on error', async () => {
+    mockSessionClient.updateSessionName.mockRejectedValue(new Error('Service unavailable'));
+
+    const handler = handlers.get(IPC_CHANNELS.SESSION_UPDATE_NAME)!;
+    const result = await handler({}, { sessionId: 'sess-1', name: 'New Name' });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({ message: 'Service unavailable' }),
+      }),
+    );
+  });
+
   // --- Settings ---
 
   it('settings:get returns current settings', () => {
@@ -319,6 +353,22 @@ describe('registerIpcHandlers', () => {
     });
   });
 
+  it('settings:update also updates session client when sessionServiceUrl changes', () => {
+    const updated = {
+      sessionServiceUrl: 'http://new-host:9001',
+      networkTimeoutMs: 5000,
+    };
+    mockSettingsStore.update.mockReturnValue({ ...updated, theme: 'system' });
+
+    const handler = handlers.get(IPC_CHANNELS.SETTINGS_UPDATE)!;
+    handler({}, updated);
+
+    expect(mockSessionClient.updateConfig).toHaveBeenCalledWith({
+      baseUrl: 'http://new-host:9001',
+      timeoutMs: 5000,
+    });
+  });
+
   it('settings:update does not update workspace client for non-network settings', () => {
     mockSettingsStore.update.mockReturnValue({ theme: 'dark' });
 
@@ -326,6 +376,7 @@ describe('registerIpcHandlers', () => {
     handler({}, { theme: 'dark' });
 
     expect(mockWorkspaceClient.updateConfig).not.toHaveBeenCalled();
+    expect(mockSessionClient.updateConfig).not.toHaveBeenCalled();
   });
 
   // --- Runtime control ---

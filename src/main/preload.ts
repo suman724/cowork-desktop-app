@@ -73,6 +73,9 @@ export interface CoworkIPC {
   deleteWorkspace: (params: { workspaceId: string }) => Promise<IpcResponse<void>>;
   deleteSession: (params: { workspaceId: string; sessionId: string }) => Promise<IpcResponse<void>>;
 
+  // Session Service
+  updateSessionName: (params: { sessionId: string; name: string }) => Promise<IpcResponse<void>>;
+
   // Settings
   getSettings: () => Promise<IpcResponse<AppSettings>>;
   updateSettings: (params: Partial<AppSettings>) => Promise<IpcResponse<AppSettings>>;
@@ -121,6 +124,9 @@ const coworkIPC: CoworkIPC = {
     ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_SESSION_HISTORY, params),
   deleteWorkspace: (params) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE, params),
   deleteSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_DELETE, params),
+
+  // Session Service
+  updateSessionName: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_UPDATE_NAME, params),
 
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),

@@ -94,17 +94,50 @@ describe('useSessionStore', () => {
     expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
   });
 
+  it('initializes incompleteTask as null', () => {
+    expect(useSessionStore.getState().incompleteTask).toBeNull();
+  });
+
+  it('sets incompleteTask', () => {
+    const task = {
+      taskId: 't-incomplete',
+      prompt: 'Fix the bug',
+      lastStep: 7,
+      maxSteps: 50,
+    };
+    useSessionStore.getState().setIncompleteTask(task);
+    expect(useSessionStore.getState().incompleteTask).toEqual(task);
+  });
+
+  it('clears incompleteTask with null', () => {
+    useSessionStore.getState().setIncompleteTask({
+      taskId: 't-1',
+      prompt: 'test',
+      lastStep: 3,
+      maxSteps: 40,
+    });
+    useSessionStore.getState().setIncompleteTask(null);
+    expect(useSessionStore.getState().incompleteTask).toBeNull();
+  });
+
   it('resets session and task state', () => {
     useSessionStore
       .getState()
       .setSessionState({ sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' });
     useSessionStore.getState().setTaskState({ taskId: 't-1' } as never);
     useSessionStore.getState().setLastFailedPrompt('some prompt');
+    useSessionStore.getState().setIncompleteTask({
+      taskId: 't-incomplete',
+      prompt: 'test',
+      lastStep: 5,
+      maxSteps: 40,
+    });
 
     useSessionStore.getState().reset();
 
     expect(useSessionStore.getState().sessionState).toBeNull();
     expect(useSessionStore.getState().taskState).toBeNull();
     expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
+    expect(useSessionStore.getState().incompleteTask).toBeNull();
   });
 });

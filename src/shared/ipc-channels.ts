@@ -25,6 +25,9 @@ export const IPC_CHANNELS = {
   WORKSPACE_DELETE: 'workspace:delete',
   SESSION_DELETE: 'workspace:delete-session',
 
+  // Session Service
+  SESSION_UPDATE_NAME: 'session:update-name',
+
   // Settings
   SETTINGS_GET: 'settings:get',
   SETTINGS_UPDATE: 'settings:update',

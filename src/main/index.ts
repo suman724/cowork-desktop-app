@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { AgentRuntimeManager } from './agent-runtime';
 import { WorkspaceServiceClient } from './workspace-client';
+import { SessionServiceClient } from './session-client';
 import { SettingsStore } from './settings-store';
 import { registerIpcHandlers } from './ipc-handlers';
 
@@ -10,6 +11,10 @@ const settingsStore = new SettingsStore();
 const settings = settingsStore.get();
 const workspaceClient = new WorkspaceServiceClient({
   baseUrl: settings.workspaceServiceUrl,
+  timeoutMs: settings.networkTimeoutMs,
+});
+const sessionClient = new SessionServiceClient({
+  baseUrl: settings.sessionServiceUrl,
   timeoutMs: settings.networkTimeoutMs,
 });
 
@@ -43,7 +48,7 @@ function createWindow(): BrowserWindow {
 }
 
 void app.whenReady().then(() => {
-  registerIpcHandlers(runtimeManager, workspaceClient, settingsStore);
+  registerIpcHandlers(runtimeManager, workspaceClient, sessionClient, settingsStore);
   createWindow();
 
   app.on('activate', () => {

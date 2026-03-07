@@ -6,9 +6,10 @@ import { useMessagesStore } from '../../../src/renderer/state/messages-store';
 import { useUIStore } from '../../../src/renderer/state/ui-store';
 
 const mockCreateSession = vi.fn();
+const mockGetSessionState = vi.fn();
 
 Object.defineProperty(window, 'coworkIPC', {
-  value: { createSession: mockCreateSession },
+  value: { createSession: mockCreateSession, getSessionState: mockGetSessionState },
   writable: true,
   configurable: true,
 });
@@ -30,6 +31,7 @@ describe('useCreateSession', () => {
   it('creates session successfully', async () => {
     const mockSession = { sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' };
     mockCreateSession.mockResolvedValue({ success: true, data: mockSession });
+    mockGetSessionState.mockResolvedValue({ success: true, data: { status: 'ready' } });
 
     const { result } = renderHook(() => useCreateSession());
 
@@ -57,6 +59,24 @@ describe('useCreateSession', () => {
 
     expect(result.current.error).toBe('Session limit reached');
     expect(useSessionStore.getState().sessionState).toBeNull();
+  });
+
+  it('detects incomplete task after session creation', async () => {
+    const mockSession = { sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' };
+    const incompleteTask = { taskId: 't-1', prompt: 'Fix bug', lastStep: 3, maxSteps: 40 };
+    mockCreateSession.mockResolvedValue({ success: true, data: mockSession });
+    mockGetSessionState.mockResolvedValue({
+      success: true,
+      data: { status: 'ready', incompleteTask },
+    });
+
+    const { result } = renderHook(() => useCreateSession());
+
+    await act(async () => {
+      await result.current.createSession({ tenantId: 't-1', userId: 'u-1' });
+    });
+
+    expect(useSessionStore.getState().incompleteTask).toEqual(incompleteTask);
   });
 
   it('handles IPC exception', async () => {
