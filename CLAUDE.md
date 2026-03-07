@@ -41,6 +41,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 - **JSON-RPC version validation** — `JsonRpcClient` validates `jsonrpc: '2.0'` on all incoming messages before processing.
 - **Event payload runtime validation** — `use-session-events.ts` uses `typeof` checks on every payload field instead of unsafe `as` casts. Handles `plan_updated` events by validating the payload and calling `sessionStore.setPlan()`.
 - **PlanPanel** — collapsible panel rendered between `ConversationHeader` and `MessageList`, showing plan goal with progress counter [completed/total] and step list with status icons (spinner=in_progress, check=completed, ban=skipped, circle=pending). Skipped steps shown with strikethrough. Auto-collapses at 7+ steps. Plan state (`PlanInfo | null`) stored in session-store, cleared on task reset.
+- **Plan mode toggle** — "Plan first" toggle button (checklist icon) in `PromptInput` next to the send button. When active, sends `taskOptions.planOnly: true` in `StartTask`, locking the agent into read-only plan mode for the task. Toggle state is local to the component (not persisted).
 - All views read/write through Zustand stores for consistent UI state.
 
 ## IPC Channels
