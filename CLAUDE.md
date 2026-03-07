@@ -21,7 +21,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 
 **Renderer process** (`src/renderer/`) — React 19, sandboxed, no Node.js APIs:
 - `App.tsx` — View router, global event hooks, approval modal overlay
-- `state/` — 5 Zustand stores: session, messages (streaming accumulation), approval (FIFO queue), history, ui
+- `state/` — 5 Zustand stores: session (includes `planMode`, `isVerifying`), messages (streaming accumulation), approval (FIFO queue), history, ui
 - `hooks/` — 11 hooks: 2 event dispatchers (`useSessionEvents`, `useAgentRuntimeEvents`) + 9 IPC wrappers with loading/error state
 - `views/` — 5 view groups: conversation (8 components including MarkdownRenderer), history (6), approval (2), patch (3), settings (1)
 - `components/` — Shared: `ErrorBoundary`, `ThemeProvider`, `AppLayout`, `StatusIndicator` + 17 shadcn/ui primitives in `ui/`
@@ -230,7 +230,7 @@ make clean             # Remove out/, dist/, coverage/, node_modules/.cache
 
 ### Testing
 
-- **Unit tests (Vitest + React Testing Library)**: 156 tests across 20 files. Test stores, hooks (via `renderHook`), IPC handlers, main-process modules, and view components in isolation. Mock `window.coworkIPC` for renderer tests.
+- **Unit tests (Vitest + React Testing Library)**: 265 tests across 27 files. Test stores, hooks (via `renderHook`), IPC handlers, main-process modules, and view components in isolation. Mock `window.coworkIPC` for renderer tests.
 - **Coverage**: 80% threshold for statements, branches, functions, lines.
 - **E2E tests (Playwright)**: Test skeleton with `mock-agent-runtime.js` providing canned JSON-RPC responses.
 - **No snapshot tests** — assertion-based tests only.

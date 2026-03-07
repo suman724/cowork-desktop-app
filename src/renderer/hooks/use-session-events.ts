@@ -26,6 +26,9 @@ const EVENT_TYPE = {
   TASK_STARTED: 'task_started',
   TASK_CANCELLED: 'task_cancelled',
   LLM_RETRY: 'llm_retry',
+  PLAN_MODE_CHANGED: 'plan_mode_changed',
+  VERIFICATION_STARTED: 'verification_started',
+  VERIFICATION_COMPLETED: 'verification_completed',
 } as const;
 
 /**
@@ -82,6 +85,8 @@ export function useSessionEvents(): void {
   const setTaskRunning = useSessionStore((s) => s.setTaskRunning);
   const setError = useSessionStore((s) => s.setError);
   const setLastFailedPrompt = useSessionStore((s) => s.setLastFailedPrompt);
+  const setPlanMode = useSessionStore((s) => s.setPlanMode);
+  const setVerifying = useSessionStore((s) => s.setVerifying);
 
   const addApproval = useApprovalStore((s) => s.addApproval);
 
@@ -238,6 +243,29 @@ export function useSessionEvents(): void {
           break;
         }
 
+        case EVENT_TYPE.PLAN_MODE_CHANGED: {
+          const planMode = p.planMode === true;
+          setPlanMode(planMode);
+          addSystemMessage(planMode ? 'Entered plan mode (read-only)' : 'Exited plan mode', 'info');
+          break;
+        }
+
+        case EVENT_TYPE.VERIFICATION_STARTED: {
+          setVerifying(true);
+          addSystemMessage('Verifying results...', 'info');
+          break;
+        }
+
+        case EVENT_TYPE.VERIFICATION_COMPLETED: {
+          setVerifying(false);
+          const passed = p.passed === true;
+          addSystemMessage(
+            passed ? 'Verification passed' : 'Verification found issues',
+            passed ? 'info' : 'warning',
+          );
+          break;
+        }
+
         default:
           // Unknown event type — ignore
           break;
@@ -255,6 +283,8 @@ export function useSessionEvents(): void {
     setTaskRunning,
     setError,
     setLastFailedPrompt,
+    setPlanMode,
+    setVerifying,
     addApproval,
   ]);
 }
