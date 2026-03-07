@@ -19,6 +19,10 @@ interface SessionStore {
   lastFailedPrompt: string | null;
   /** Incomplete task detected during crash recovery */
   incompleteTask: IncompleteTask | null;
+  /** Whether the agent is currently in plan (read-only) mode */
+  planMode: boolean;
+  /** Whether the agent is currently in the verification phase */
+  isVerifying: boolean;
 
   setSessionState: (state: SessionState | null) => void;
   setTaskState: (state: TaskState | null) => void;
@@ -30,6 +34,8 @@ interface SessionStore {
   setViewingHistory: (viewing: boolean) => void;
   setLastFailedPrompt: (prompt: string | null) => void;
   setIncompleteTask: (task: IncompleteTask | null) => void;
+  setPlanMode: (planMode: boolean) => void;
+  setVerifying: (verifying: boolean) => void;
   updateSessionName: (name: string) => void;
   reset: () => void;
 }
@@ -43,6 +49,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
   isViewingHistory: false,
   lastFailedPrompt: null,
   incompleteTask: null,
+  planMode: false,
+  isVerifying: false,
 
   setSessionState: (sessionState) => set({ sessionState, error: null }),
   setTaskState: (taskState) => set({ taskState }),
@@ -60,6 +68,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
   setViewingHistory: (isViewingHistory) => set({ isViewingHistory }),
   setLastFailedPrompt: (lastFailedPrompt) => set({ lastFailedPrompt }),
   setIncompleteTask: (incompleteTask) => set({ incompleteTask }),
+  setPlanMode: (planMode) => set({ planMode }),
+  setVerifying: (isVerifying) => set({ isVerifying }),
   updateSessionName: (name) =>
     set((state) => ({
       sessionState: state.sessionState ? { ...state.sessionState, name } : null,
@@ -74,5 +84,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
       isViewingHistory: false,
       lastFailedPrompt: null,
       incompleteTask: null,
+      planMode: false,
+      isVerifying: false,
     }),
 }));

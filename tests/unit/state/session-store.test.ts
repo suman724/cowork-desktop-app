@@ -120,6 +120,24 @@ describe('useSessionStore', () => {
     expect(useSessionStore.getState().incompleteTask).toBeNull();
   });
 
+  it('initializes planMode as false', () => {
+    expect(useSessionStore.getState().planMode).toBe(false);
+  });
+
+  it('sets planMode', () => {
+    useSessionStore.getState().setPlanMode(true);
+    expect(useSessionStore.getState().planMode).toBe(true);
+  });
+
+  it('initializes isVerifying as false', () => {
+    expect(useSessionStore.getState().isVerifying).toBe(false);
+  });
+
+  it('sets isVerifying', () => {
+    useSessionStore.getState().setVerifying(true);
+    expect(useSessionStore.getState().isVerifying).toBe(true);
+  });
+
   it('resets session and task state', () => {
     useSessionStore
       .getState()
@@ -133,11 +151,16 @@ describe('useSessionStore', () => {
       maxSteps: 40,
     });
 
+    useSessionStore.getState().setPlanMode(true);
+    useSessionStore.getState().setVerifying(true);
+
     useSessionStore.getState().reset();
 
     expect(useSessionStore.getState().sessionState).toBeNull();
     expect(useSessionStore.getState().taskState).toBeNull();
     expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
     expect(useSessionStore.getState().incompleteTask).toBeNull();
+    expect(useSessionStore.getState().planMode).toBe(false);
+    expect(useSessionStore.getState().isVerifying).toBe(false);
   });
 });

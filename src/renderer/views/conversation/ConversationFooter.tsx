@@ -13,11 +13,15 @@ export function ConversationFooter({
   canRetry,
 }: ConversationFooterProps): React.JSX.Element {
   const taskState = useSessionStore((s) => s.taskState);
+  const planMode = useSessionStore((s) => s.planMode);
+  const isVerifying = useSessionStore((s) => s.isVerifying);
 
   if (!taskState) return <></>;
 
   const progress =
     taskState.maxSteps > 0 ? Math.round((taskState.currentStep / taskState.maxSteps) * 100) : 0;
+
+  const modeLabel = planMode ? ' · Plan mode' : isVerifying ? ' · Verifying' : '';
 
   return (
     <div className="border-t">
@@ -37,6 +41,7 @@ export function ConversationFooter({
         <span>
           Step {taskState.currentStep}/{taskState.maxSteps}
           {taskState.isRunning && ` · ${String(progress)}%`}
+          {taskState.isRunning && modeLabel}
         </span>
         {taskState.isRunning && (
           <Button

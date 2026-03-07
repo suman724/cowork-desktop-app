@@ -176,6 +176,77 @@ describe('useSessionEvents — severity propagation', () => {
     expect(useSessionStore.getState().lastFailedPrompt).toBeNull();
   });
 
+  it('PLAN_MODE_CHANGED sets planMode and adds system message', () => {
+    setup();
+
+    act(() => {
+      fireEvent('plan_mode_changed', { planMode: true });
+    });
+
+    expect(useSessionStore.getState().planMode).toBe(true);
+    const messages = useMessagesStore.getState().messages;
+    const systemMsg = messages.find((m) => m.role === 'system');
+    expect(systemMsg?.severity).toBe('info');
+    expect(systemMsg?.content).toContain('plan mode');
+  });
+
+  it('PLAN_MODE_CHANGED exit sets planMode false', () => {
+    useSessionStore.getState().setPlanMode(true);
+    setup();
+
+    act(() => {
+      fireEvent('plan_mode_changed', { planMode: false });
+    });
+
+    expect(useSessionStore.getState().planMode).toBe(false);
+    const messages = useMessagesStore.getState().messages;
+    const systemMsg = messages.find((m) => m.role === 'system');
+    expect(systemMsg?.content).toContain('Exited plan mode');
+  });
+
+  it('VERIFICATION_STARTED sets isVerifying and adds system message', () => {
+    setup();
+
+    act(() => {
+      fireEvent('verification_started', {});
+    });
+
+    expect(useSessionStore.getState().isVerifying).toBe(true);
+    const messages = useMessagesStore.getState().messages;
+    const systemMsg = messages.find((m) => m.role === 'system');
+    expect(systemMsg?.content).toContain('Verifying');
+  });
+
+  it('VERIFICATION_COMPLETED with passed=true clears isVerifying', () => {
+    useSessionStore.getState().setVerifying(true);
+    setup();
+
+    act(() => {
+      fireEvent('verification_completed', { passed: true });
+    });
+
+    expect(useSessionStore.getState().isVerifying).toBe(false);
+    const messages = useMessagesStore.getState().messages;
+    const systemMsg = messages.find((m) => m.role === 'system');
+    expect(systemMsg?.severity).toBe('info');
+    expect(systemMsg?.content).toContain('passed');
+  });
+
+  it('VERIFICATION_COMPLETED with passed=false shows warning', () => {
+    useSessionStore.getState().setVerifying(true);
+    setup();
+
+    act(() => {
+      fireEvent('verification_completed', { passed: false });
+    });
+
+    expect(useSessionStore.getState().isVerifying).toBe(false);
+    const messages = useMessagesStore.getState().messages;
+    const systemMsg = messages.find((m) => m.role === 'system');
+    expect(systemMsg?.severity).toBe('warning');
+    expect(systemMsg?.content).toContain('issues');
+  });
+
   it('system messages without explicit severity default to undefined', () => {
     // Verify that TEXT_CHUNK does not create system messages
     setup();
