@@ -123,9 +123,7 @@ export function Sidebar(): React.JSX.Element {
           name: sessionSummary?.name,
         });
         useSessionStore.getState().setTaskState(null);
-        useSessionStore.getState().setPlan(null);
-        useSessionStore.getState().setPlanMode(false);
-        useSessionStore.getState().setVerifying(false);
+        useSessionStore.getState().clearPlanState();
         useSessionStore.getState().setViewingHistory(true);
         useMessagesStore.getState().clear();
 

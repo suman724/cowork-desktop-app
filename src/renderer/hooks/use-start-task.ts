@@ -110,9 +110,7 @@ export function useStartTask(): UseStartTask {
           isRunning: true,
         });
         // Clear stale plan from previous task so it doesn't flash in the UI
-        useSessionStore.getState().setPlan(null);
-        useSessionStore.getState().setPlanMode(false);
-        useSessionStore.getState().setVerifying(false);
+        useSessionStore.getState().clearPlanState();
         useSessionStore.getState().setLastFailedPrompt(null);
 
         // Auto-name session from first prompt (instant local feedback)
@@ -126,7 +124,6 @@ export function useStartTask(): UseStartTask {
           approvalMode: settings.approvalMode,
           ...(options?.planOnly ? { planOnly: true } : {}),
         };
-        console.log('[StartTask] Sending with taskOptions:', JSON.stringify(taskOptions));
         const result = await window.coworkIPC.startTask({
           sessionId,
           taskId,
@@ -186,9 +183,7 @@ export function useStartTask(): UseStartTask {
           maxSteps: resumeMaxSteps,
           isRunning: true,
         });
-        useSessionStore.getState().setPlan(null);
-        useSessionStore.getState().setPlanMode(false);
-        useSessionStore.getState().setVerifying(false);
+        useSessionStore.getState().clearPlanState();
         useSessionStore.getState().setIncompleteTask(null);
         useSessionStore.getState().setLastFailedPrompt(null);
 

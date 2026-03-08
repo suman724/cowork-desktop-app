@@ -47,9 +47,7 @@ export function useAutoSession(): UseAutoSession {
 
       const sessionState = sessionResult.data;
       useSessionStore.getState().setSessionState(sessionState);
-      useSessionStore.getState().setPlan(null);
-      useSessionStore.getState().setPlanMode(false);
-      useSessionStore.getState().setVerifying(false);
+      useSessionStore.getState().clearPlanState();
       useMessagesStore.getState().clear();
 
       // Step 2: Start task (must be sequential — needs sessionId from step 1)

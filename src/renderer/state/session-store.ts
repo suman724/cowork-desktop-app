@@ -41,6 +41,7 @@ interface SessionStore {
   setVerifying: (verifying: boolean) => void;
   setPlan: (plan: PlanInfo | null) => void;
   updateSessionName: (name: string) => void;
+  clearPlanState: () => void;
   reset: () => void;
 }
 
@@ -80,6 +81,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
     set((state) => ({
       sessionState: state.sessionState ? { ...state.sessionState, name } : null,
     })),
+  clearPlanState: () => set({ plan: null, planMode: false, isVerifying: false }),
   reset: () =>
     set({
       sessionState: null,

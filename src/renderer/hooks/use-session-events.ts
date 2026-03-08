@@ -105,11 +105,6 @@ export function useSessionEvents(): void {
     const cleanup = window.coworkIPC.onSessionEvent((event: SessionEvent) => {
       const p = event.payload;
 
-      // Debug: log all non-text-chunk events for troubleshooting
-      if (event.eventType !== EVENT_TYPE.TEXT_CHUNK) {
-        console.log(`[SessionEvent] ${event.eventType}`, JSON.stringify(p).slice(0, 300));
-      }
-
       switch (event.eventType) {
         case EVENT_TYPE.TEXT_CHUNK: {
           const text = typeof p.text === 'string' ? p.text : '';
@@ -261,7 +256,6 @@ export function useSessionEvents(): void {
 
         case EVENT_TYPE.PLAN_MODE_CHANGED: {
           const planMode = p.planMode === true;
-          console.log('[PlanMode] plan_mode_changed event received:', { planMode, source: p.source });
           setPlanMode(planMode);
           addSystemMessage(planMode ? 'Entered plan mode (read-only)' : 'Exited plan mode', 'info');
           break;
@@ -284,7 +278,6 @@ export function useSessionEvents(): void {
         }
 
         case EVENT_TYPE.PLAN_UPDATED: {
-          console.log('[PlanUpdated] plan_updated event received:', JSON.stringify(p).slice(0, 500));
           const goal = typeof p.goal === 'string' ? p.goal : '';
           const rawSteps = Array.isArray(p.steps) ? (p.steps as unknown[]) : [];
           const steps: PlanStepInfo[] = rawSteps
@@ -294,7 +287,6 @@ export function useSessionEvents(): void {
               description: typeof s.description === 'string' ? s.description : '',
               status: parsePlanStepStatus(s.status),
             }));
-          console.log('[PlanUpdated] Parsed plan:', { goal, stepCount: steps.length });
           if (goal) {
             setPlan({ goal, steps });
           }
