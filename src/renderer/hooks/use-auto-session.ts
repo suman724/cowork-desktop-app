@@ -3,8 +3,12 @@ import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
 import { useUIStore } from '../state/ui-store';
 
+interface StartChatOptions {
+  planOnly?: boolean;
+}
+
 interface UseAutoSession {
-  startChat: (prompt: string) => Promise<void>;
+  startChat: (prompt: string, options?: StartChatOptions) => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
@@ -18,7 +22,7 @@ export function useAutoSession(): UseAutoSession {
   const [error, setError] = useState<string | null>(null);
   const loadingRef = useRef(false);
 
-  const startChat = useCallback(async (prompt: string) => {
+  const startChat = useCallback(async (prompt: string, options?: StartChatOptions) => {
     if (loadingRef.current) return;
 
     loadingRef.current = true;
@@ -43,6 +47,9 @@ export function useAutoSession(): UseAutoSession {
 
       const sessionState = sessionResult.data;
       useSessionStore.getState().setSessionState(sessionState);
+      useSessionStore.getState().setPlan(null);
+      useSessionStore.getState().setPlanMode(false);
+      useSessionStore.getState().setVerifying(false);
       useMessagesStore.getState().clear();
 
       // Step 2: Start task (must be sequential — needs sessionId from step 1)
@@ -64,6 +71,7 @@ export function useAutoSession(): UseAutoSession {
         taskOptions: {
           maxSteps: settings.maxStepsPerTask,
           approvalMode: settings.approvalMode,
+          ...(options?.planOnly ? { planOnly: true } : {}),
         },
       });
 

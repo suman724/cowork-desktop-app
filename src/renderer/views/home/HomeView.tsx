@@ -10,8 +10,8 @@ export function HomeView(): React.JSX.Element {
   const setWorkspacePath = useSessionStore((s) => s.setWorkspacePath);
 
   const handleSubmit = useCallback(
-    (prompt: string) => {
-      void startChat(prompt);
+    (prompt: string, options?: { planOnly?: boolean }) => {
+      void startChat(prompt, options);
     },
     [startChat],
   );
