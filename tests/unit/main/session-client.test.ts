@@ -7,7 +7,7 @@ describe('SessionServiceClient', () => {
 
   beforeEach(() => {
     client = new SessionServiceClient({
-      baseUrl: 'http://localhost:8001',
+      baseUrl: 'http://localhost:8000',
       timeoutMs: 5000,
       maxRetries: 2,
     });
@@ -27,7 +27,7 @@ describe('SessionServiceClient', () => {
     await client.updateSessionName('sess-1', 'My Session', false);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:8001/sessions/sess-1/name',
+      'http://localhost:8000/sessions/sess-1/name',
       expect.objectContaining({
         method: 'PATCH',
         headers: expect.objectContaining({
@@ -44,7 +44,7 @@ describe('SessionServiceClient', () => {
     await client.updateSessionName('sess/special&id', 'name', false);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:8001/sessions/sess%2Fspecial%26id/name',
+      'http://localhost:8000/sessions/sess%2Fspecial%26id/name',
       expect.any(Object),
     );
   });

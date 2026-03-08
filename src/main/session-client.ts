@@ -6,7 +6,7 @@ interface SessionServiceConfig {
 }
 
 const DEFAULT_CONFIG: SessionServiceConfig = {
-  baseUrl: 'http://localhost:8001',
+  baseUrl: 'http://localhost:8000',
   timeoutMs: 5_000,
   maxRetries: 2,
 };
