@@ -115,10 +115,12 @@ export function Sidebar(): React.JSX.Element {
         // Always fetch the latest messages from the Workspace Service.
         // The agent-runtime uploads session history after each task completes,
         // so the server has the authoritative conversation state.
+        const sessionSummary = sessions.find((s) => s.sessionId === sessionId);
         useSessionStore.getState().setSessionState({
           sessionId,
           workspaceId,
           status: 'ready',
+          name: sessionSummary?.name,
         });
         useSessionStore.getState().setTaskState(null);
         useSessionStore.getState().setViewingHistory(true);
