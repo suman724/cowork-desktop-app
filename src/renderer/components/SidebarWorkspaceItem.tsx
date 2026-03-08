@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, FolderOpen, MessageSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
 import {
   DropdownMenu,
@@ -58,9 +58,14 @@ export function SidebarWorkspaceItem({
         )}
       >
         <button onClick={onClick} className="min-w-0 flex-1 px-3 py-1.5">
-          <div className="flex items-center justify-between gap-1">
-            <span className="truncate font-medium">{getDisplayName(workspace)}</span>
-            <span className="text-muted-foreground shrink-0 text-xs">
+          <div className="flex items-center gap-2">
+            {workspace.localPath ? (
+              <FolderOpen className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <MessageSquare className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+            )}
+            <span className="min-w-0 truncate font-medium">{getDisplayName(workspace)}</span>
+            <span className="text-muted-foreground ml-auto shrink-0 text-xs">
               {isExpanded ? '\u25BE' : '\u25B8'}
               {sessionCount != null && ` ${sessionCount}`}
             </span>

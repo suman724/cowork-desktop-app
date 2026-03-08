@@ -90,7 +90,7 @@ export function ConversationView(): React.JSX.Element {
         />
       )}
       {showContinueButton ? (
-        <div className="border-t px-4 py-3">
+        <div className="border-t px-6 py-3">
           <Button
             onClick={handleContinue}
             disabled={isContinuing}

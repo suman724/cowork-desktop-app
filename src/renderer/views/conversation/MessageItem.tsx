@@ -50,7 +50,7 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
     const toolInfo = parseToolContent(message.content);
     if (toolInfo) {
       return (
-        <div className="flex gap-3 px-4 py-1.5" data-testid="tool-message">
+        <div className="flex gap-3 px-6 py-1.5" data-testid="tool-message">
           <div className="w-8 shrink-0" />
           <div className="min-w-0 flex-1">
             <ToolCallCard toolCall={toolInfo} />
@@ -60,7 +60,7 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
     }
     // Fallback: render as plain text
     return (
-      <div className="flex gap-3 px-4 py-1.5" data-testid="tool-message-fallback">
+      <div className="flex gap-3 px-6 py-1.5" data-testid="tool-message-fallback">
         <div className="w-8 shrink-0" />
         <div className="text-muted-foreground min-w-0 flex-1 text-xs break-words whitespace-pre-wrap">
           {message.content}
@@ -85,7 +85,7 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
       textClass = 'text-yellow-600 dark:text-yellow-400';
     }
     return (
-      <div className="flex gap-3 px-4 py-4" data-testid={`system-message-${severity}`}>
+      <div className="animate-message-in flex gap-3 px-6 py-5" data-testid={`system-message-${severity}`}>
         <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${iconBg}`}>
           <Icon className="h-4 w-4" />
         </div>
@@ -94,14 +94,14 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
     );
   }
 
-  // User messages: right-aligned bubble
+  // User messages: right-aligned bubble with soft tint
   if (message.role === 'user') {
     return (
-      <div className="flex justify-end gap-3 px-4 py-4">
-        <div className="bg-primary text-primary-foreground max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5">
+      <div className="animate-message-in flex justify-end gap-3 px-6 py-5">
+        <div className="bg-[var(--color-user-bubble)] text-[var(--color-user-bubble-foreground)] max-w-[80%] rounded-2xl rounded-br-sm px-4 py-2.5 shadow-sm">
           <div className="text-sm break-words whitespace-pre-wrap">{message.content}</div>
         </div>
-        <div className="bg-primary text-primary-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+        <div className="bg-[var(--color-user-bubble)] text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
           <User className="h-4 w-4" />
         </div>
       </div>
@@ -110,8 +110,8 @@ export function MessageItem({ message }: MessageItemProps): React.JSX.Element {
 
   // Assistant messages: left-aligned, full width with markdown
   return (
-    <div className="flex gap-3 px-4 py-4">
-      <div className="bg-secondary text-secondary-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+    <div className="animate-message-in flex gap-3 px-6 py-5">
+      <div className="bg-[var(--color-assistant-avatar)] text-[var(--color-assistant-avatar-foreground)] flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
         <Bot className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">

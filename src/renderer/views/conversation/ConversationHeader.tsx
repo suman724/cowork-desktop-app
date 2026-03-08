@@ -21,9 +21,9 @@ export function ConversationHeader(): React.JSX.Element {
   const title = sessionName || folderName || 'Conversation';
 
   return (
-    <div className="flex items-center justify-between border-b px-4 py-2 shadow-sm">
+    <div className="flex items-center justify-between border-b px-6 py-3 shadow-sm">
       <div className="flex items-center gap-3">
-        <h1 className="text-sm font-semibold">{title}</h1>
+        <h1 className="text-base font-semibold tracking-tight">{title}</h1>
         {isRunning && !planMode && !isVerifying && (
           <Badge variant="secondary" className="animate-pulse gap-1.5">
             <span className="bg-primary h-1.5 w-1.5 rounded-full" />

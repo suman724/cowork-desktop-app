@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { PromptInput } from '../conversation/PromptInput';
 import { useAutoSession } from '../../hooks/use-auto-session';
@@ -38,9 +39,14 @@ export function HomeView(): React.JSX.Element {
   return (
     <div className="flex h-full flex-col items-center justify-center" data-testid="home-view">
       <div className="w-full max-w-2xl space-y-6 px-6">
-        <h1 className="text-foreground text-center text-2xl font-semibold">
-          What can I help you with?
-        </h1>
+        <div className="flex flex-col items-center gap-3">
+          <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-2xl">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <h1 className="text-foreground text-center text-2xl font-semibold tracking-tight">
+            What can I help you with?
+          </h1>
+        </div>
 
         {error && (
           <div className="bg-destructive/10 text-destructive rounded-md p-3 text-center text-sm">
