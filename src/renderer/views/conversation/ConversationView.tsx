@@ -51,6 +51,7 @@ export function ConversationView(): React.JSX.Element {
         const result = await window.coworkIPC.resumeSession({ sessionId });
         if (result.success) {
           setSessionState(result.data);
+          useSessionStore.getState().clearPlanState();
           setViewingHistory(false);
 
           // Check for incomplete task from crash recovery
