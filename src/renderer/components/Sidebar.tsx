@@ -158,7 +158,7 @@ export function Sidebar(): React.JSX.Element {
       };
       void load();
     },
-    [setView, workspaces],
+    [setView, workspaces, sessions],
   );
 
   const handleDeleteWorkspace = useCallback(
@@ -205,9 +205,9 @@ export function Sidebar(): React.JSX.Element {
   );
 
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col border-r" data-testid="sidebar">
-      <div className="border-b px-3 py-2">
-        <Button size="sm" className="w-full" onClick={handleNewChat} data-testid="new-chat-button">
+    <div className="flex h-full w-72 shrink-0 flex-col border-r" data-testid="sidebar">
+      <div className="border-b px-3 py-3">
+        <Button size="sm" className="w-full gap-2" onClick={handleNewChat} data-testid="new-chat-button">
           <Plus className="h-4 w-4" />
           New Chat
         </Button>

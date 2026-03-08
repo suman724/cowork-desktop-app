@@ -127,7 +127,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps): React.JSX.Element
 
   return (
     <div
-      className={`bg-card overflow-hidden rounded-md border border-l-2 ${category.accent} p-2.5 text-sm`}
+      className={`bg-card overflow-hidden rounded-md border border-l-2 ${category.accent} p-3 text-sm`}
     >
       {/* Header row: icon + name + category badge + status badge */}
       <div className="flex items-center justify-between gap-2">

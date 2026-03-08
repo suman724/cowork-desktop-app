@@ -99,10 +99,17 @@ export function SidebarSessionItem({
 
   return (
     <>
-      <div className="group hover:bg-accent flex w-full items-center rounded-md text-left text-xs transition-colors">
+      <div
+        className={cn(
+          'group hover:bg-accent flex w-full items-center rounded-md text-left text-xs transition-colors',
+          session.sessionId === activeSessionId && 'bg-accent border-primary/40 border-l-2',
+        )}
+      >
         <button onClick={onClick} className="min-w-0 flex-1 px-3 py-1">
           <div className="flex items-center justify-between">
-            <span className="truncate">{session.name || session.sessionId.slice(0, 12)}</span>
+            <span className={cn('truncate', session.sessionId === activeSessionId && 'font-medium')}>
+              {session.name || session.sessionId.slice(0, 12)}
+            </span>
             <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
               {session.taskCount}
             </Badge>

@@ -35,8 +35,8 @@ export function PromptInput({
   );
 
   return (
-    <div className="bg-background border-t p-4">
-      <div className="bg-card flex gap-2 rounded-xl border p-2 shadow-sm">
+    <div className="bg-background border-t px-6 py-4">
+      <div className="bg-card flex gap-2 rounded-xl border p-3 shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-1 focus-within:ring-ring/30">
         <Textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}

@@ -10,21 +10,20 @@ const THINKING_DEBOUNCE_MS = 300;
 
 function ThinkingIndicator(): React.JSX.Element {
   return (
-    <div className="flex gap-3 px-4 py-4">
-      <div className="bg-secondary text-secondary-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+    <div className="animate-message-in flex gap-3 px-6 py-5">
+      <div className="bg-[var(--color-assistant-avatar)] text-[var(--color-assistant-avatar-foreground)] flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
         <Bot className="h-4 w-4" />
       </div>
-      <div className="flex items-center gap-1 pt-1">
-        <span className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full" />
+      <div className="flex items-center gap-1.5 pt-1">
+        <span className="bg-muted-foreground/60 h-2 w-2 animate-bounce rounded-full" />
         <span
-          className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full"
+          className="bg-muted-foreground/60 h-2 w-2 animate-bounce rounded-full"
           style={{ animationDelay: '150ms' }}
         />
         <span
-          className="bg-muted-foreground h-1.5 w-1.5 animate-bounce rounded-full"
+          className="bg-muted-foreground/60 h-2 w-2 animate-bounce rounded-full"
           style={{ animationDelay: '300ms' }}
         />
-        <span className="text-muted-foreground ml-2 text-sm">Thinking...</span>
       </div>
     </div>
   );

@@ -28,8 +28,8 @@ describe('PlanPanel', () => {
     useSessionStore.getState().setPlan(SAMPLE_PLAN);
     render(<PlanPanel />);
 
-    expect(screen.getByText(/Plan: Add user authentication/)).toBeInTheDocument();
-    expect(screen.getByText('[1/3]')).toBeInTheDocument();
+    expect(screen.getByText('Add user authentication')).toBeInTheDocument();
+    expect(screen.getByText('1/3')).toBeInTheDocument();
   });
 
   it('renders all steps with descriptions', () => {
@@ -69,7 +69,7 @@ describe('PlanPanel', () => {
     });
     render(<PlanPanel />);
 
-    expect(screen.getByText('[2/3]')).toBeInTheDocument();
+    expect(screen.getByText('2/3')).toBeInTheDocument();
   });
 
   it('applies strikethrough styling to skipped steps', () => {

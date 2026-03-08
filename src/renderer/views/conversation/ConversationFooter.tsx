@@ -26,9 +26,9 @@ export function ConversationFooter({
   return (
     <div className="border-t">
       {taskState.isRunning && (
-        <div className="bg-muted h-1 w-full overflow-hidden">
+        <div className="bg-muted h-1.5 w-full overflow-hidden">
           <div
-            className="bg-primary h-full transition-all duration-500 ease-out"
+            className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
             style={{ width: `${String(progress)}%` }}
             role="progressbar"
             aria-valuenow={progress}
@@ -37,7 +37,7 @@ export function ConversationFooter({
           />
         </div>
       )}
-      <div className="text-muted-foreground flex items-center justify-between px-4 py-1.5 text-xs">
+      <div className="text-muted-foreground flex items-center justify-between px-6 py-1.5 text-xs">
         <span>
           Step {taskState.currentStep}/{taskState.maxSteps}
           {taskState.isRunning && ` · ${String(progress)}%`}

@@ -14,7 +14,7 @@ export function ResumeTaskBanner({
 }: ResumeTaskBannerProps): React.JSX.Element {
   return (
     <div
-      className="border-border bg-muted/50 mx-4 mb-2 rounded-md border px-4 py-3"
+      className="border-border bg-muted/50 mx-6 mb-2 rounded-md border px-4 py-3"
       role="status"
       data-testid="resume-task-banner"
     >
