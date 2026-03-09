@@ -76,9 +76,9 @@ export function ConversationView(): React.JSX.Element {
   const showContinueButton = isViewingHistory && !taskState;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className={`flex h-full ${team ? 'flex-row' : 'flex-col'}`}>
       {/* Lead conversation area */}
-      <div className={`flex min-h-0 flex-col ${team ? 'flex-1' : 'flex-1'}`}>
+      <div className={`flex min-h-0 flex-col ${team ? 'w-[400px] shrink-0 border-r' : 'flex-1'}`}>
         <ConversationHeader />
         <PlanPanel />
         <MessageList />
