@@ -26,7 +26,7 @@ export function useTeamEvents(): void {
   const upsertTask = useTeamStore((s) => s.upsertTask);
   const addMessage = useTeamStore((s) => s.addMessage);
   const appendTeammateOutput = useTeamStore((s) => s.appendTeammateOutput);
-  const setTeammateTool = useTeamStore((s) => s.setTeammateTool);
+  const addTeammateTool = useTeamStore((s) => s.addTeammateTool);
 
   useEffect(() => {
     const cleanup = window.coworkIPC.onTeamEvent((event: TeamEvent) => {
@@ -107,12 +107,14 @@ export function useTeamEvents(): void {
           const toolName = typeof p.toolName === 'string' ? p.toolName : '';
           const status = typeof p.status === 'string' ? p.status : '';
           const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : '';
+          const args = typeof p.args === 'string' ? p.args : undefined;
           if (name && toolName) {
-            setTeammateTool(name, {
+            addTeammateTool(name, {
               toolName,
               status,
               toolCallId,
               timestamp: Date.now(),
+              args,
             });
           }
           break;
@@ -132,6 +134,6 @@ export function useTeamEvents(): void {
     upsertTask,
     addMessage,
     appendTeammateOutput,
-    setTeammateTool,
+    addTeammateTool,
   ]);
 }

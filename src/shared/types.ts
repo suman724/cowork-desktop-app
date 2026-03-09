@@ -189,6 +189,7 @@ export interface TeammateToolActivity {
   status: string;
   toolCallId: string;
   timestamp: number;
+  args?: string;
 }
 
 /** Team state as managed by the team store */

@@ -7,9 +7,28 @@ interface TeammatePanelProps {
   member: TeamMember;
 }
 
+const TOOL_ICONS: Record<string, string> = {
+  WebSearch: '🔍',
+  FetchUrl: '🌐',
+  ReadFile: '📄',
+  WriteFile: '✏️',
+  EditFile: '✏️',
+  DeleteFile: '🗑️',
+  RunCommand: '⚡',
+  GrepFiles: '🔎',
+  FindFiles: '📁',
+  ListDirectory: '📁',
+  ExecuteCode: '🧪',
+  HttpRequest: '🌐',
+  TeamTaskCreate: '📋',
+  TeamTaskUpdate: '📋',
+  SendTeamMessage: '💬',
+};
+
 export function TeammatePanel({ member }: TeammatePanelProps): React.JSX.Element {
   const output = useTeamStore((s) => s.teammateOutput[member.name] ?? '');
   const toolActivity = useTeamStore((s) => s.teammateTools[member.name]);
+  const toolHistory = useTeamStore((s) => s.teammateToolHistory[member.name] ?? []);
   const tasks = useTeamStore((s) => s.tasks);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -18,7 +37,7 @@ export function TeammatePanel({ member }: TeammatePanelProps): React.JSX.Element
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [output]);
+  }, [output, toolHistory.length]);
 
   // Show tool activity if it's recent (within 10s) and in-progress
   const isToolActive =
@@ -74,10 +93,43 @@ export function TeammatePanel({ member }: TeammatePanelProps): React.JSX.Element
         </div>
       )}
 
-      {/* Output */}
+      {/* Content area: output + tool log */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3">
-        {output ? (
-          <MarkdownRenderer content={output} />
+        {output || toolHistory.length > 0 ? (
+          <div className="space-y-2">
+            {/* Tool call history */}
+            {toolHistory.length > 0 && (
+              <div className="space-y-0.5">
+                {toolHistory.map((tool, i) => (
+                  <div
+                    key={`${tool.toolCallId}-${String(i)}`}
+                    className="flex items-center gap-1.5 text-xs"
+                  >
+                    <span className="shrink-0">{TOOL_ICONS[tool.toolName] ?? '🔧'}</span>
+                    <span className="font-medium">{tool.toolName}</span>
+                    {tool.args && (
+                      <span className="text-muted-foreground min-w-0 truncate">{tool.args}</span>
+                    )}
+                    <span className="ml-auto shrink-0">
+                      {tool.status === 'requested' && (
+                        <span className="text-blue-500">running</span>
+                      )}
+                      {tool.status === 'success' && <span className="text-green-500">✓</span>}
+                      {tool.status === 'error' && <span className="text-red-500">✗</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Text output */}
+            {output && (
+              <>
+                {toolHistory.length > 0 && <hr className="border-border" />}
+                <MarkdownRenderer content={output} />
+              </>
+            )}
+          </div>
         ) : (
           <p className="text-muted-foreground text-sm italic">Waiting for output...</p>
         )}

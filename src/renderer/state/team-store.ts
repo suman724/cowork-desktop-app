@@ -20,6 +20,8 @@ interface TeamStore {
   teammateOutput: Record<string, string>;
   /** Per-teammate current tool activity (name → latest tool) */
   teammateTools: Record<string, TeammateToolActivity>;
+  /** Per-teammate tool call history (name → list of tool calls) */
+  teammateToolHistory: Record<string, TeammateToolActivity[]>;
 
   // Actions
   setTeam: (team: TeamInfo) => void;
@@ -29,7 +31,7 @@ interface TeamStore {
   upsertTask: (task: TeamTask) => void;
   addMessage: (msg: TeamMessage) => void;
   appendTeammateOutput: (name: string, text: string) => void;
-  setTeammateTool: (name: string, tool: TeammateToolActivity) => void;
+  addTeammateTool: (name: string, tool: TeammateToolActivity) => void;
   reset: () => void;
 }
 
@@ -42,6 +44,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
   messages: [],
   teammateOutput: {},
   teammateTools: {},
+  teammateToolHistory: {},
 
   setTeam: (team) => set({ team }),
 
@@ -53,6 +56,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
       messages: [],
       teammateOutput: {},
       teammateTools: {},
+      teammateToolHistory: {},
     }),
 
   addMember: (member) =>
@@ -91,12 +95,25 @@ export const useTeamStore = create<TeamStore>((set) => ({
       },
     })),
 
-  setTeammateTool: (name, tool) =>
+  addTeammateTool: (name, tool) =>
     set((state) => ({
       teammateTools: {
         ...state.teammateTools,
         [name]: tool,
       },
+      teammateToolHistory:
+        tool.status === 'requested'
+          ? {
+              ...state.teammateToolHistory,
+              [name]: [...(state.teammateToolHistory[name] ?? []), tool],
+            }
+          : {
+              // Update the last entry's status when completed
+              ...state.teammateToolHistory,
+              [name]: (state.teammateToolHistory[name] ?? []).map((t) =>
+                t.toolCallId === tool.toolCallId ? { ...t, status: tool.status } : t,
+              ),
+            },
     })),
 
   reset: () => {
@@ -108,6 +125,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
       messages: [],
       teammateOutput: {},
       teammateTools: {},
+      teammateToolHistory: {},
     };
   },
 }));
