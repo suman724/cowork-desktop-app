@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTeamStore } from '../../state/team-store';
 import { TeammatePanel } from './TeammatePanel';
 import { TaskBoardView } from './TaskBoardView';
@@ -13,11 +14,11 @@ export function TeamView(): React.JSX.Element {
   const team = useTeamStore((s) => s.team);
   const members = useTeamStore((s) => s.members);
 
+  const activeMembers = useMemo(() => members.filter((m) => m.status === 'running'), [members]);
+
   if (!team) {
     return <></>;
   }
-
-  const activeMembers = members.filter((m) => m.status === 'running');
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">

@@ -35,7 +35,12 @@ const STATUS_CONFIG: Record<string, { icon: string; label: string; bg: string; t
 };
 
 function TaskCard({ task, allTasks }: { task: TeamTask; allTasks: TeamTask[] }): React.JSX.Element {
-  const config = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.pending;
+  const config = STATUS_CONFIG[task.status] ?? {
+    icon: '○',
+    label: 'Unknown',
+    bg: 'bg-gray-100 dark:bg-gray-800',
+    text: 'text-muted-foreground',
+  };
 
   // Resolve blocked_by task titles
   const blockers =

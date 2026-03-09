@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTeamStore } from '../../state/team-store';
 import { MarkdownRenderer } from '../conversation/MarkdownRenderer';
 import type { TeamMember } from '../../../shared/types';
@@ -6,6 +7,8 @@ import type { TeamMember } from '../../../shared/types';
 interface TeammatePanelProps {
   member: TeamMember;
 }
+
+const EMPTY_ARRAY: never[] = [];
 
 const TOOL_ICONS: Record<string, string> = {
   WebSearch: '🔍',
@@ -28,8 +31,8 @@ const TOOL_ICONS: Record<string, string> = {
 export function TeammatePanel({ member }: TeammatePanelProps): React.JSX.Element {
   const output = useTeamStore((s) => s.teammateOutput[member.name] ?? '');
   const toolActivity = useTeamStore((s) => s.teammateTools[member.name]);
-  const toolHistory = useTeamStore((s) => s.teammateToolHistory[member.name] ?? []);
-  const tasks = useTeamStore((s) => s.tasks);
+  const toolHistory = useTeamStore((s) => s.teammateToolHistory[member.name]) ?? EMPTY_ARRAY;
+  const tasks = useTeamStore(useShallow((s) => s.tasks));
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when output changes
@@ -46,7 +49,7 @@ export function TeammatePanel({ member }: TeammatePanelProps): React.JSX.Element
     Date.now() - toolActivity.timestamp < 10_000;
 
   // Tasks assigned to this teammate
-  const myTasks = tasks.filter((t) => t.assignee === member.name);
+  const myTasks = useMemo(() => tasks.filter((t) => t.assignee === member.name), [tasks, member.name]);
 
   return (
     <div className="border-border flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border">
