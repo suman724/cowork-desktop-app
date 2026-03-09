@@ -166,10 +166,12 @@ export interface TeamMember {
 export interface TeamTask {
   task_id: string;
   title: string;
+  description?: string;
   status: string;
   assignee?: string | null;
   created_by?: string;
   result?: string | null;
+  blocked_by?: string[];
 }
 
 /** An inter-agent message for the team message feed */

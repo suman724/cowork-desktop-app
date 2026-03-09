@@ -66,10 +66,12 @@ export function useTeamEvents(): void {
             upsertTask({
               task_id: typeof t.task_id === 'string' ? t.task_id : '',
               title: typeof t.title === 'string' ? t.title : '',
+              description: typeof t.description === 'string' ? t.description : undefined,
               status: typeof t.status === 'string' ? t.status : 'pending',
               assignee: typeof t.assignee === 'string' ? t.assignee : null,
               created_by: typeof t.created_by === 'string' ? t.created_by : undefined,
               result: typeof t.result === 'string' ? t.result : null,
+              blocked_by: Array.isArray(t.blocked_by) ? (t.blocked_by as string[]) : undefined,
             });
           }
           break;
