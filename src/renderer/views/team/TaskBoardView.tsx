@@ -24,18 +24,18 @@ export function TaskBoardView(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-1 p-2">
+    <div className="space-y-1.5 p-2">
       {tasks.map((task) => (
-        <div
-          key={task.task_id}
-          className="bg-muted/50 flex items-center gap-2 rounded px-3 py-2 text-sm"
-        >
-          <span className={STATUS_COLORS[task.status] ?? 'text-muted-foreground'}>
-            {STATUS_ICONS[task.status] ?? '?'}
-          </span>
-          <span className="min-w-0 flex-1 truncate">{task.title}</span>
-          {task.assignee && (
-            <span className="text-muted-foreground shrink-0 text-xs">@{task.assignee}</span>
+        <div key={task.task_id} className="bg-muted/50 rounded px-2.5 py-2 text-xs">
+          <div className="flex items-start gap-1.5">
+            <span className={`shrink-0 ${STATUS_COLORS[task.status] ?? 'text-muted-foreground'}`}>
+              {STATUS_ICONS[task.status] ?? '?'}
+            </span>
+            <span className="leading-tight font-medium">{task.title}</span>
+          </div>
+          {task.assignee && <div className="text-muted-foreground mt-1 pl-4">@{task.assignee}</div>}
+          {task.result && (
+            <div className="mt-1 pl-4 text-green-600 dark:text-green-400">{task.result}</div>
           )}
         </div>
       ))}

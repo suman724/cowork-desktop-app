@@ -43,7 +43,7 @@ export function TeamView(): React.JSX.Element {
         </div>
 
         {/* Right sidebar: tasks + messages */}
-        <div className="border-border flex w-56 shrink-0 flex-col overflow-hidden border-l">
+        <div className="border-border flex w-72 shrink-0 flex-col overflow-hidden border-l">
           <div className="shrink-0 border-b px-3 py-2">
             <span className="text-xs font-semibold tracking-wider uppercase">Tasks</span>
           </div>
