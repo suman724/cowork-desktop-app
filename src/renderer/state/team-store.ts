@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import type { TeamInfo, TeamMember, TeamTask, TeamMessage } from '../../shared/types';
+import type {
+  TeamInfo,
+  TeamMember,
+  TeamTask,
+  TeamMessage,
+  TeammateToolActivity,
+} from '../../shared/types';
 
 interface TeamStore {
   /** Active team info (null when no team) */
@@ -12,6 +18,8 @@ interface TeamStore {
   messages: TeamMessage[];
   /** Per-teammate streaming output buffers (name → text) */
   teammateOutput: Record<string, string>;
+  /** Per-teammate current tool activity (name → latest tool) */
+  teammateTools: Record<string, TeammateToolActivity>;
 
   // Actions
   setTeam: (team: TeamInfo) => void;
@@ -21,6 +29,7 @@ interface TeamStore {
   upsertTask: (task: TeamTask) => void;
   addMessage: (msg: TeamMessage) => void;
   appendTeammateOutput: (name: string, text: string) => void;
+  setTeammateTool: (name: string, tool: TeammateToolActivity) => void;
   reset: () => void;
 }
 
@@ -32,6 +41,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
   tasks: [],
   messages: [],
   teammateOutput: {},
+  teammateTools: {},
 
   setTeam: (team) => set({ team }),
 
@@ -42,6 +52,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
       tasks: [],
       messages: [],
       teammateOutput: {},
+      teammateTools: {},
     }),
 
   addMember: (member) =>
@@ -80,6 +91,14 @@ export const useTeamStore = create<TeamStore>((set) => ({
       },
     })),
 
+  setTeammateTool: (name, tool) =>
+    set((state) => ({
+      teammateTools: {
+        ...state.teammateTools,
+        [name]: tool,
+      },
+    })),
+
   reset: () => {
     messageCounter = 0;
     return {
@@ -88,6 +107,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
       tasks: [],
       messages: [],
       teammateOutput: {},
+      teammateTools: {},
     };
   },
 }));

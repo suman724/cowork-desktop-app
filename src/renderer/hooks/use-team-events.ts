@@ -12,6 +12,7 @@ const TEAM_METHOD = {
   TASK_UPDATED: 'team/task_updated',
   MESSAGE: 'team/message',
   TEAMMATE_OUTPUT: 'team/teammate_output',
+  TEAMMATE_TOOL: 'team/teammate_tool',
 } as const;
 
 /**
@@ -25,6 +26,7 @@ export function useTeamEvents(): void {
   const upsertTask = useTeamStore((s) => s.upsertTask);
   const addMessage = useTeamStore((s) => s.addMessage);
   const appendTeammateOutput = useTeamStore((s) => s.appendTeammateOutput);
+  const setTeammateTool = useTeamStore((s) => s.setTeammateTool);
 
   useEffect(() => {
     const cleanup = window.coworkIPC.onTeamEvent((event: TeamEvent) => {
@@ -98,6 +100,22 @@ export function useTeamEvents(): void {
           break;
         }
 
+        case TEAM_METHOD.TEAMMATE_TOOL: {
+          const name = typeof p.name === 'string' ? p.name : '';
+          const toolName = typeof p.toolName === 'string' ? p.toolName : '';
+          const status = typeof p.status === 'string' ? p.status : '';
+          const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : '';
+          if (name && toolName) {
+            setTeammateTool(name, {
+              toolName,
+              status,
+              toolCallId,
+              timestamp: Date.now(),
+            });
+          }
+          break;
+        }
+
         default:
           // Unknown team event — ignore
           break;
@@ -105,5 +123,13 @@ export function useTeamEvents(): void {
     });
 
     return cleanup;
-  }, [setTeam, addMember, removeMember, upsertTask, addMessage, appendTeammateOutput]);
+  }, [
+    setTeam,
+    addMember,
+    removeMember,
+    upsertTask,
+    addMessage,
+    appendTeammateOutput,
+    setTeammateTool,
+  ]);
 }

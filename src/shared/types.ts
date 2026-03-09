@@ -181,6 +181,14 @@ export interface TeamMessage {
   timestamp: string;
 }
 
+/** Tool activity indicator for a teammate */
+export interface TeammateToolActivity {
+  toolName: string;
+  status: string;
+  toolCallId: string;
+  timestamp: number;
+}
+
 /** Team state as managed by the team store */
 export interface TeamInfo {
   teamId: string;
