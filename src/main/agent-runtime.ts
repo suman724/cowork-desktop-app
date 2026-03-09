@@ -99,8 +99,12 @@ export class AgentRuntimeManager {
 
     // Forward notifications to renderer
     rpcClient.on('notification', (method: string, params: unknown) => {
-      if (method === 'SessionEvent' && this.mainWindow && !this.mainWindow.isDestroyed()) {
+      if (!this.mainWindow || this.mainWindow.isDestroyed()) return;
+
+      if (method === 'SessionEvent') {
         this.mainWindow.webContents.send(IPC_EVENTS.SESSION_EVENT, params as SessionEvent);
+      } else if (method.startsWith('team/')) {
+        this.mainWindow.webContents.send(IPC_EVENTS.TEAM_EVENT, { method, params });
       }
     });
 

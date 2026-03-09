@@ -8,6 +8,7 @@ import { PatchPreviewView } from './views/patch/PatchPreviewView';
 import { SettingsView } from './views/settings/SettingsView';
 import { ApprovalDialog } from './views/approval/ApprovalDialog';
 import { useSessionEvents } from './hooks/use-session-events';
+import { useTeamEvents } from './hooks/use-team-events';
 import { useAgentRuntimeEvents } from './hooks/use-agent-runtime-events';
 import { useUIStore } from './state/ui-store';
 
@@ -17,6 +18,7 @@ export function App(): React.JSX.Element {
 
   // Register global event hooks
   useSessionEvents();
+  useTeamEvents();
   useAgentRuntimeEvents();
 
   return (

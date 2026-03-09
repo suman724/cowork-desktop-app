@@ -5,7 +5,9 @@ import { ConversationFooter } from './ConversationFooter';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
 import { ResumeTaskBanner } from './ResumeTaskBanner';
+import { TeamView } from '../team/TeamView';
 import { useSessionStore } from '../../state/session-store';
+import { useTeamStore } from '../../state/team-store';
 import { useStartTask } from '../../hooks/use-start-task';
 import { useCancelTask } from '../../hooks/use-cancel-task';
 import { Button } from '../../components/ui/button';
@@ -19,6 +21,7 @@ export function ConversationView(): React.JSX.Element {
   const lastFailedPrompt = useSessionStore((s) => s.lastFailedPrompt);
   const incompleteTask = useSessionStore((s) => s.incompleteTask);
   const clearIncompleteTask = useSessionStore((s) => s.setIncompleteTask);
+  const team = useTeamStore((s) => s.team);
   const { startTask, resumeTask } = useStartTask();
   const { cancelTask } = useCancelTask();
 
@@ -73,40 +76,46 @@ export function ConversationView(): React.JSX.Element {
   const showContinueButton = isViewingHistory && !taskState;
 
   return (
-    <div className="flex h-full flex-col">
-      <ConversationHeader />
-      <PlanPanel />
-      <MessageList />
-      <ConversationFooter
-        onCancel={handleCancel}
-        onRetry={handleRetry}
-        canRetry={lastFailedPrompt !== null}
-      />
-      {incompleteTask && !isTaskRunning && (
-        <ResumeTaskBanner
-          incompleteTask={incompleteTask}
-          onResume={() => void resumeTask(incompleteTask)}
-          onDismiss={() => clearIncompleteTask(null)}
+    <div className={`flex h-full ${team ? 'flex-row' : 'flex-col'}`}>
+      {/* Lead conversation area */}
+      <div className={`flex min-h-0 flex-col ${team ? 'w-[400px] shrink-0 border-r' : 'flex-1'}`}>
+        <ConversationHeader />
+        <PlanPanel />
+        <MessageList />
+        <ConversationFooter
+          onCancel={handleCancel}
+          onRetry={handleRetry}
+          canRetry={lastFailedPrompt !== null}
         />
-      )}
-      {showContinueButton ? (
-        <div className="border-t px-6 py-3">
-          <Button
-            onClick={handleContinue}
-            disabled={isContinuing}
-            className="w-full"
-            data-testid="continue-conversation-button"
-          >
-            {isContinuing ? 'Starting...' : 'Continue Conversation'}
-          </Button>
-        </div>
-      ) : (
-        <PromptInput
-          onSubmit={handleSubmit}
-          disabled={isTaskRunning}
-          placeholder="Type a message..."
-        />
-      )}
+        {incompleteTask && !isTaskRunning && (
+          <ResumeTaskBanner
+            incompleteTask={incompleteTask}
+            onResume={() => void resumeTask(incompleteTask)}
+            onDismiss={() => clearIncompleteTask(null)}
+          />
+        )}
+        {showContinueButton ? (
+          <div className="border-t px-6 py-3">
+            <Button
+              onClick={handleContinue}
+              disabled={isContinuing}
+              className="w-full"
+              data-testid="continue-conversation-button"
+            >
+              {isContinuing ? 'Starting...' : 'Continue Conversation'}
+            </Button>
+          </div>
+        ) : (
+          <PromptInput
+            onSubmit={handleSubmit}
+            disabled={isTaskRunning}
+            placeholder="Type a message..."
+          />
+        )}
+      </div>
+
+      {/* Team panel — shown when a team is active */}
+      {team && <TeamView />}
     </div>
   );
 }

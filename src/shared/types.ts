@@ -147,4 +147,55 @@ export interface ListSessionsResponse {
   nextToken?: string;
 }
 
+// ── Team types ──────────────────────────────────────────────────
+
+/** Team event received from agent runtime via JSON-RPC team/* notifications */
+export interface TeamEvent {
+  method: string;
+  params: Record<string, unknown>;
+}
+
+/** A teammate in the team */
+export interface TeamMember {
+  name: string;
+  role: string;
+  status: 'running' | 'stopped';
+}
+
+/** A task in the shared team task list */
+export interface TeamTask {
+  task_id: string;
+  title: string;
+  description?: string;
+  status: string;
+  assignee?: string | null;
+  created_by?: string;
+  result?: string | null;
+  blocked_by?: string[];
+}
+
+/** An inter-agent message for the team message feed */
+export interface TeamMessage {
+  id: string;
+  from: string;
+  to: string;
+  content: string;
+  timestamp: string;
+}
+
+/** Tool activity indicator for a teammate */
+export interface TeammateToolActivity {
+  toolName: string;
+  status: string;
+  toolCallId: string;
+  timestamp: number;
+  args?: string;
+}
+
+/** Team state as managed by the team store */
+export interface TeamInfo {
+  teamId: string;
+  name: string;
+}
+
 export type { ApprovalRequest, ConversationMessage, Workspace };
