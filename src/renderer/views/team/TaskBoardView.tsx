@@ -62,11 +62,10 @@ function TaskCard({ task, allTasks }: { task: TeamTask; allTasks: TeamTask[] }):
         <span className={`font-medium ${config.text}`}>{config.label}</span>
 
         {/* Assignee */}
-        {task.assignee && <span className="text-muted-foreground">@{task.assignee}</span>}
-
-        {/* Created by (if different from assignee) */}
-        {task.created_by && task.created_by !== task.assignee && (
-          <span className="text-muted-foreground">by @{task.created_by}</span>
+        {task.assignee && (
+          <span className="rounded bg-blue-100 px-1 py-0.5 font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+            @{task.assignee}
+          </span>
         )}
       </div>
 
