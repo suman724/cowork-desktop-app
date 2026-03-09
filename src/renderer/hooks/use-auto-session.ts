@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
+import { useTeamStore } from '../state/team-store';
 import { useUIStore } from '../state/ui-store';
 
 interface StartChatOptions {
@@ -49,6 +50,7 @@ export function useAutoSession(): UseAutoSession {
       useSessionStore.getState().setSessionState(sessionState);
       useSessionStore.getState().clearPlanState();
       useMessagesStore.getState().clear();
+      useTeamStore.getState().clearTeam();
 
       // Step 2: Start task (must be sequential — needs sessionId from step 1)
       const taskId = `task-${Date.now()}`;

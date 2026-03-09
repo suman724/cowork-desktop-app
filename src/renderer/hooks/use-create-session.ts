@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { SessionState } from '../../shared/types';
 import { useSessionStore } from '../state/session-store';
 import { useMessagesStore } from '../state/messages-store';
+import { useTeamStore } from '../state/team-store';
 import { useUIStore } from '../state/ui-store';
 
 interface UseCreateSession {
@@ -37,6 +38,7 @@ export function useCreateSession(): UseCreateSession {
           const sessionState: SessionState = result.data;
           setSessionState(sessionState);
           clearMessages();
+          useTeamStore.getState().clearTeam();
           setView('conversation');
 
           // Check for incomplete task from crash recovery

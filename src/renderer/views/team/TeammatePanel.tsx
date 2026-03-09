@@ -49,7 +49,10 @@ export function TeammatePanel({ member }: TeammatePanelProps): React.JSX.Element
     Date.now() - toolActivity.timestamp < 10_000;
 
   // Tasks assigned to this teammate
-  const myTasks = useMemo(() => tasks.filter((t) => t.assignee === member.name), [tasks, member.name]);
+  const myTasks = useMemo(
+    () => tasks.filter((t) => t.assignee === member.name),
+    [tasks, member.name],
+  );
 
   return (
     <div className="border-border flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border">
