@@ -3,6 +3,7 @@ import { IPC_CHANNELS, IPC_EVENTS } from '../shared/ipc-channels';
 import type {
   IpcResponse,
   SessionEvent,
+  TeamEvent,
   SessionState,
   AgentRuntimeStatus,
   AppSettings,
@@ -96,6 +97,7 @@ export interface CoworkIPC {
 
   // Event listeners (returns cleanup function)
   onSessionEvent: (callback: (event: SessionEvent) => void) => () => void;
+  onTeamEvent: (callback: (event: TeamEvent) => void) => () => void;
   onRuntimeStatusChanged: (callback: (status: AgentRuntimeStatus) => void) => () => void;
   onRuntimeCrashed: (
     callback: (info: { code: number | null; signal: string | null }) => void,
@@ -153,6 +155,14 @@ const coworkIPC: CoworkIPC = {
     };
     ipcRenderer.on(IPC_EVENTS.SESSION_EVENT, handler);
     return () => ipcRenderer.removeListener(IPC_EVENTS.SESSION_EVENT, handler);
+  },
+
+  onTeamEvent: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: TeamEvent): void => {
+      callback(data);
+    };
+    ipcRenderer.on(IPC_EVENTS.TEAM_EVENT, handler);
+    return () => ipcRenderer.removeListener(IPC_EVENTS.TEAM_EVENT, handler);
   },
 
   onRuntimeStatusChanged: (callback) => {

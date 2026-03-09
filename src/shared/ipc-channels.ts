@@ -59,6 +59,9 @@ export const IPC_EVENTS = {
 
   /** Agent runtime crashed unexpectedly */
   RUNTIME_CRASHED: 'push:runtime-crashed',
+
+  /** Team event from agent runtime (team/created, team/teammate_created, etc.) */
+  TEAM_EVENT: 'push:team-event',
 } as const;
 
 export type IpcEvent = (typeof IPC_EVENTS)[keyof typeof IPC_EVENTS];
