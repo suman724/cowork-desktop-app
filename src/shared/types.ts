@@ -122,6 +122,15 @@ export interface SessionEvent {
   stepId?: string;
   severity?: 'info' | 'warning' | 'error';
   payload: Record<string, unknown>;
+  /** Monotonic event ID assigned by the EventBuffer (present on all live events) */
+  eventId?: number;
+}
+
+/** Response from the GetEvents JSON-RPC method */
+export interface GetEventsResponse {
+  events: SessionEvent[];
+  gapDetected: boolean;
+  latestId: number;
 }
 
 /** History types for workspace/session browsing */

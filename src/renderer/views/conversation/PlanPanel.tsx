@@ -61,7 +61,7 @@ export function PlanPanel(): React.JSX.Element | null {
           ) : (
             <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
           )}
-          <span className="text-muted-foreground shrink-0 text-xs font-semibold uppercase tracking-wider">
+          <span className="text-muted-foreground shrink-0 text-xs font-semibold tracking-wider uppercase">
             Plan
           </span>
           <span className="min-w-0 truncate">{plan.goal}</span>

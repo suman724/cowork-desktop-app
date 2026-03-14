@@ -26,6 +26,8 @@ interface SessionStore {
   isVerifying: boolean;
   /** Current agent plan (null when no plan exists) */
   plan: PlanInfo | null;
+  /** Monotonic event ID from the last processed event (for replay) */
+  lastSeenEventId: number;
 
   setSessionState: (state: SessionState | null) => void;
   setTaskState: (state: TaskState | null) => void;
@@ -41,6 +43,7 @@ interface SessionStore {
   setVerifying: (verifying: boolean) => void;
   setPlan: (plan: PlanInfo | null) => void;
   updateSessionName: (name: string) => void;
+  setLastSeenEventId: (id: number) => void;
   clearPlanState: () => void;
   reset: () => void;
 }
@@ -57,8 +60,20 @@ export const useSessionStore = create<SessionStore>((set) => ({
   planMode: false,
   isVerifying: false,
   plan: null,
+  lastSeenEventId: 0,
 
-  setSessionState: (sessionState) => set({ sessionState, error: null }),
+  setSessionState: (sessionState) =>
+    set((state) => {
+      // Reset lastSeenEventId when switching to a different session
+      const prevSessionId = state.sessionState?.sessionId;
+      const newSessionId = sessionState?.sessionId;
+      const resetEventId = prevSessionId !== newSessionId;
+      return {
+        sessionState,
+        error: null,
+        ...(resetEventId ? { lastSeenEventId: 0 } : {}),
+      };
+    }),
   setTaskState: (taskState) => set({ taskState }),
   updateTaskStep: (step) =>
     set((state) => ({
@@ -81,6 +96,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
     set((state) => ({
       sessionState: state.sessionState ? { ...state.sessionState, name } : null,
     })),
+  setLastSeenEventId: (lastSeenEventId) => set({ lastSeenEventId }),
   clearPlanState: () => set({ plan: null, planMode: false, isVerifying: false }),
   reset: () =>
     set({
@@ -95,5 +111,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
       planMode: false,
       isVerifying: false,
       plan: null,
+      lastSeenEventId: 0,
     }),
 }));

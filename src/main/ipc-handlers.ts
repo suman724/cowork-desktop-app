@@ -119,6 +119,17 @@ export function registerIpcHandlers(
     }
   });
 
+  ipcMain.handle(IPC_CHANNELS.SESSION_GET_EVENTS, async (_event, params: { sinceId: number }) => {
+    try {
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime is not running');
+      const result = await client.request('GetEvents', params);
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
+
   // --- Task control ---
   ipcMain.handle(
     IPC_CHANNELS.TASK_START,

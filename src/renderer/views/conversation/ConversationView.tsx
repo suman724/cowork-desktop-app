@@ -8,6 +8,7 @@ import { ResumeTaskBanner } from './ResumeTaskBanner';
 import { useSessionStore } from '../../state/session-store';
 import { useStartTask } from '../../hooks/use-start-task';
 import { useCancelTask } from '../../hooks/use-cancel-task';
+import { useEventReplay } from '../../hooks/use-event-replay';
 import { Button } from '../../components/ui/button';
 
 export function ConversationView(): React.JSX.Element {
@@ -21,6 +22,9 @@ export function ConversationView(): React.JSX.Element {
   const clearIncompleteTask = useSessionStore((s) => s.setIncompleteTask);
   const { startTask, resumeTask } = useStartTask();
   const { cancelTask } = useCancelTask();
+
+  // Replay missed events when returning to conversation view
+  useEventReplay();
 
   const [isContinuing, setIsContinuing] = useState(false);
 
