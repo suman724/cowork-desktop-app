@@ -138,6 +138,41 @@ describe('useSessionStore', () => {
     expect(useSessionStore.getState().isVerifying).toBe(true);
   });
 
+  it('initializes lastSeenEventId as 0', () => {
+    expect(useSessionStore.getState().lastSeenEventId).toBe(0);
+  });
+
+  it('sets lastSeenEventId', () => {
+    useSessionStore.getState().setLastSeenEventId(42);
+    expect(useSessionStore.getState().lastSeenEventId).toBe(42);
+  });
+
+  it('resets lastSeenEventId when session changes', () => {
+    useSessionStore
+      .getState()
+      .setSessionState({ sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' });
+    useSessionStore.getState().setLastSeenEventId(50);
+
+    // Switch to a different session
+    useSessionStore
+      .getState()
+      .setSessionState({ sessionId: 's-2', workspaceId: 'ws-2', status: 'ready' });
+    expect(useSessionStore.getState().lastSeenEventId).toBe(0);
+  });
+
+  it('does not reset lastSeenEventId when same session is set', () => {
+    useSessionStore
+      .getState()
+      .setSessionState({ sessionId: 's-1', workspaceId: 'ws-1', status: 'ready' });
+    useSessionStore.getState().setLastSeenEventId(50);
+
+    // Set same session again
+    useSessionStore
+      .getState()
+      .setSessionState({ sessionId: 's-1', workspaceId: 'ws-1', status: 'running' });
+    expect(useSessionStore.getState().lastSeenEventId).toBe(50);
+  });
+
   it('resets session and task state', () => {
     useSessionStore
       .getState()
@@ -153,6 +188,7 @@ describe('useSessionStore', () => {
 
     useSessionStore.getState().setPlanMode(true);
     useSessionStore.getState().setVerifying(true);
+    useSessionStore.getState().setLastSeenEventId(99);
 
     useSessionStore.getState().reset();
 
@@ -162,5 +198,6 @@ describe('useSessionStore', () => {
     expect(useSessionStore.getState().incompleteTask).toBeNull();
     expect(useSessionStore.getState().planMode).toBe(false);
     expect(useSessionStore.getState().isVerifying).toBe(false);
+    expect(useSessionStore.getState().lastSeenEventId).toBe(0);
   });
 });

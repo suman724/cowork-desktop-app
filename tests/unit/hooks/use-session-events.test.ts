@@ -21,12 +21,20 @@ Object.defineProperty(window, 'coworkIPC', {
   configurable: true,
 });
 
-// Import hook AFTER mocking IPC
-import { useSessionEvents } from '../../../src/renderer/hooks/use-session-events';
+// Import hook and dispatch function AFTER mocking IPC
+import {
+  useSessionEvents,
+  dispatchSessionEvent,
+} from '../../../src/renderer/hooks/use-session-events';
+import { useApprovalStore } from '../../../src/renderer/state/approval-store';
 
-function fireEvent(eventType: string, payload: Record<string, unknown> = {}): void {
+function fireEvent(
+  eventType: string,
+  payload: Record<string, unknown> = {},
+  eventId?: number,
+): void {
   if (!eventHandler) throw new Error('No event handler registered');
-  eventHandler({ eventType, sessionId: 'sess-1', payload });
+  eventHandler({ eventType, sessionId: 'sess-1', payload, eventId });
 }
 
 describe('useSessionEvents — severity propagation', () => {
@@ -258,5 +266,100 @@ describe('useSessionEvents — severity propagation', () => {
     const messages = useMessagesStore.getState().messages;
     const systemMsgs = messages.filter((m) => m.role === 'system');
     expect(systemMsgs).toHaveLength(0);
+  });
+
+  it('tracks eventId from live events and updates lastSeenEventId', () => {
+    setup();
+
+    act(() => {
+      fireEvent('text_chunk', { text: 'A' }, 1);
+      fireEvent('text_chunk', { text: 'B' }, 2);
+      fireEvent('text_chunk', { text: 'C' }, 3);
+    });
+
+    expect(useSessionStore.getState().lastSeenEventId).toBe(3);
+  });
+
+  it('does not decrease lastSeenEventId on out-of-order events', () => {
+    setup();
+
+    act(() => {
+      fireEvent('text_chunk', { text: 'A' }, 5);
+      fireEvent('text_chunk', { text: 'B' }, 3); // out of order
+    });
+
+    expect(useSessionStore.getState().lastSeenEventId).toBe(5);
+  });
+
+  it('handles events without eventId gracefully', () => {
+    setup();
+
+    act(() => {
+      fireEvent('text_chunk', { text: 'A' }); // no eventId
+    });
+
+    // Should not crash, lastSeenEventId stays at 0
+    expect(useSessionStore.getState().lastSeenEventId).toBe(0);
+    const messages = useMessagesStore.getState().messages;
+    expect(messages).toHaveLength(1);
+  });
+});
+
+describe('dispatchSessionEvent — replay mode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useMessagesStore.getState().clear();
+    useSessionStore.getState().reset();
+    useApprovalStore.getState().clear();
+  });
+
+  it('skips approval_requested during replay', () => {
+    dispatchSessionEvent(
+      {
+        eventType: 'approval_requested',
+        sessionId: 'sess-1',
+        eventId: 10,
+        payload: {
+          approvalId: 'a-1',
+          sessionId: 'sess-1',
+          taskId: 't-1',
+          title: 'Delete file',
+          actionSummary: 'rm file',
+        },
+      },
+      { isReplay: true },
+    );
+
+    expect(useApprovalStore.getState().pendingApprovals).toHaveLength(0);
+  });
+
+  it('processes non-approval events during replay', () => {
+    dispatchSessionEvent(
+      {
+        eventType: 'text_chunk',
+        sessionId: 'sess-1',
+        eventId: 10,
+        payload: { text: 'replayed text' },
+      },
+      { isReplay: true },
+    );
+
+    const messages = useMessagesStore.getState().messages;
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.content).toBe('replayed text');
+  });
+
+  it('updates lastSeenEventId during replay', () => {
+    dispatchSessionEvent(
+      {
+        eventType: 'text_chunk',
+        sessionId: 'sess-1',
+        eventId: 42,
+        payload: { text: 'text' },
+      },
+      { isReplay: true },
+    );
+
+    expect(useSessionStore.getState().lastSeenEventId).toBe(42);
   });
 });

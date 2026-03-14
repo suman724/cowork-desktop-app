@@ -28,7 +28,7 @@ export function ConversationFooter({
       {taskState.isRunning && (
         <div className="bg-muted h-1.5 w-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+            className="from-primary to-primary/70 h-full bg-gradient-to-r transition-all duration-500 ease-out"
             style={{ width: `${String(progress)}%` }}
             role="progressbar"
             aria-valuenow={progress}

@@ -22,13 +22,13 @@ The app follows a strict main/renderer process split with a typed preload bridge
 **Renderer process** (`src/renderer/`) — React 19, sandboxed, no Node.js APIs:
 - `App.tsx` — View router, global event hooks, approval modal overlay
 - `state/` — 5 Zustand stores: session (includes `planMode`, `isVerifying`, `plan: PlanInfo | null`), messages (streaming accumulation), approval (FIFO queue), history, ui
-- `hooks/` — 11 hooks: 2 event dispatchers (`useSessionEvents`, `useAgentRuntimeEvents`) + 9 IPC wrappers with loading/error state
+- `hooks/` — 12 hooks: 2 event dispatchers (`useSessionEvents`, `useAgentRuntimeEvents`) + 1 event replay (`useEventReplay`) + 9 IPC wrappers with loading/error state
 - `views/` — 5 view groups: conversation (9 components including MarkdownRenderer and PlanPanel), history (6), approval (2), patch (3), settings (1)
 - `components/` — Shared: `ErrorBoundary`, `ThemeProvider`, `AppLayout`, `StatusIndicator` + 17 shadcn/ui primitives in `ui/`
 
 **Shared** (`src/shared/`) — Imported by both processes:
-- `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent`, `AppSettings`, `PlanInfo`, `PlanStepInfo` + re-exports from `@cowork/platform`
-- `ipc-channels.ts` — `IPC_CHANNELS` (15 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
+- `types.ts` — `SessionState`, `TaskState`, `AgentRuntimeStatus`, `IpcResponse<T>`, `DisplayMessage`, `ToolCallInfo`, `SessionEvent` (with optional `eventId`), `GetEventsResponse`, `AppSettings`, `PlanInfo`, `PlanStepInfo` + re-exports from `@cowork/platform`
+- `ipc-channels.ts` — `IPC_CHANNELS` (16 invoke channels) + `IPC_EVENTS` (3 push channels) as const objects
 
 ## Key Constraints
 
@@ -39,7 +39,8 @@ The app follows a strict main/renderer process split with a typed preload bridge
 - **Streaming text accumulation in Zustand** — `text_chunk` events append to current assistant message via `messagesStore.appendTextChunk()`.
 - **Settings validation** — `SettingsStore.update()` clamps numeric ranges and rejects invalid enum values via `validateSettings()`.
 - **JSON-RPC version validation** — `JsonRpcClient` validates `jsonrpc: '2.0'` on all incoming messages before processing.
-- **Event payload runtime validation** — `use-session-events.ts` uses `typeof` checks on every payload field instead of unsafe `as` casts. Handles `plan_updated` events by validating the payload and calling `sessionStore.setPlan()`.
+- **Event payload runtime validation** — `use-session-events.ts` exports `dispatchSessionEvent()` — a standalone function that uses `typeof` checks on every payload field instead of unsafe `as` casts. Handles `plan_updated` events by validating the payload and calling `sessionStore.setPlan()`. Accepts an `isReplay` option to skip side-effect events (e.g., approval dialogs) during replay.
+- **Event replay** — `useEventReplay` hook (wired in `ConversationView`) replays missed events when the user navigates back to a running session. Calls `GetEvents` JSON-RPC with `lastSeenEventId`, deduplicates by event ID, skips approval dialogs during replay. Falls back to full Workspace Service history reload on `gapDetected` (buffer overflow). `lastSeenEventId` is tracked in session-store, auto-resets on session change and store reset.
 - **PlanPanel** — collapsible panel rendered between `ConversationHeader` and `MessageList`, showing plan goal with progress counter [completed/total] and step list with status icons (spinner=in_progress, check=completed, ban=skipped, circle=pending). Skipped steps shown with strikethrough. Auto-collapses at 7+ steps. Plan state (`PlanInfo | null`) stored in session-store, cleared on task reset.
 - **Plan mode toggle** — "Plan first" toggle button (checklist icon) in `PromptInput` next to the send button. When active, sends `taskOptions.planOnly: true` in `StartTask`, locking the agent into read-only plan mode for the task. Toggle state is local to the component (not persisted).
 - All views read/write through Zustand stores for consistent UI state.
@@ -53,6 +54,7 @@ The app follows a strict main/renderer process split with a typed preload bridge
 | `session:create` | `CreateSession` (60s timeout) |
 | `session:resume` | `ResumeSession` (60s timeout) |
 | `session:get-state` | `GetSessionState` |
+| `session:get-events` | `GetEvents` (event replay) |
 | `task:start` | `StartTask` |
 | `task:cancel` | `CancelTask` |
 | `approval:resolve` | `ApproveAction` |
@@ -128,13 +130,14 @@ cowork-desktop-app/
       preload.d.ts           # window.coworkIPC type declaration
       lib/utils.ts           # cn() utility (shadcn)
       state/                 # 5 Zustand stores
-        session-store.ts     # Session, task state, runtime status, plan progress
+        session-store.ts     # Session, task state, runtime status, plan progress, lastSeenEventId
         messages-store.ts    # Messages, streaming accumulation, tool cards
         approval-store.ts    # FIFO approval queue
         history-store.ts     # Workspaces, sessions, loading flags
         ui-store.ts          # Current view, theme, settings
       hooks/                 # 11 custom React hooks
-        use-session-events.ts       # Dispatches SessionEvent → stores
+        use-session-events.ts       # Dispatches SessionEvent → stores (exports dispatchSessionEvent)
+        use-event-replay.ts         # Replays missed events on view return (GetEvents + gap fallback)
         use-agent-runtime-events.ts # Status changes + crash events
         use-create-session.ts       # IPC wrapper with loading/error
         use-start-task.ts
@@ -184,7 +187,7 @@ cowork-desktop-app/
 - **Linting**: ESLint 9 flat config with `typescript-eslint/strictTypeChecked`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-config-prettier`. shadcn/ui components in `components/ui/` are excluded from linting.
 - **Formatting**: Prettier — single quotes, trailing commas, 100 print width, 2-space indent, `prettier-plugin-tailwindcss`
 - **Markdown rendering**: `react-markdown` v9 + `remark-gfm` (GFM tables, strikethrough, task lists) + `rehype-highlight` (syntax-highlighted code blocks via highlight.js). Used in `MarkdownRenderer` component for assistant messages.
-- **Testing**: Vitest + React Testing Library (unit), Playwright (E2E). 203 unit tests across 21 test files.
+- **Testing**: Vitest + React Testing Library (unit), Playwright (E2E). 293 unit tests across 29 test files.
 - **Build**: electron-vite for development (3 build targets: main, preload, renderer), electron-builder for distribution
 - **UI**: shadcn/ui (Radix + Tailwind CSS v4) with 17 primitives. Tailwind v4 uses CSS-first config via `@tailwindcss/vite`.
 - **State management**: Zustand v5 (lightweight, TypeScript-native)
@@ -232,7 +235,7 @@ make clean             # Remove out/, dist/, coverage/, node_modules/.cache
 
 ### Testing
 
-- **Unit tests (Vitest + React Testing Library)**: 265 tests across 27 files. Test stores, hooks (via `renderHook`), IPC handlers, main-process modules, and view components in isolation. Mock `window.coworkIPC` for renderer tests.
+- **Unit tests (Vitest + React Testing Library)**: 293 tests across 29 files. Test stores, hooks (via `renderHook`), IPC handlers, main-process modules, and view components in isolation. Mock `window.coworkIPC` for renderer tests.
 - **Coverage**: 80% threshold for statements, branches, functions, lines.
 - **E2E tests (Playwright)**: Test skeleton with `mock-agent-runtime.js` providing canned JSON-RPC responses.
 - **No snapshot tests** — assertion-based tests only.

@@ -9,7 +9,7 @@ import { useApprovalStore } from '../state/approval-store';
  * Event type constants matching the platform SDK EventType values.
  * Defined locally to avoid dependency on SDK sub-path exports.
  */
-const EVENT_TYPE = {
+export const EVENT_TYPE = {
   TEXT_CHUNK: 'text_chunk',
   STEP_STARTED: 'step_started',
   STEP_COMPLETED: 'step_completed',
@@ -80,239 +80,243 @@ function parseApprovalRequest(payload: Record<string, unknown>): ApprovalRequest
   return result;
 }
 
+interface DispatchOptions {
+  /** When true, skip side-effect events like approval_requested */
+  isReplay?: boolean;
+}
+
+/**
+ * Dispatches a single session event to the appropriate Zustand stores.
+ *
+ * Uses .getState() for fresh reads — safe to call from both live event
+ * handlers and replay logic without stale closure issues.
+ */
+export function dispatchSessionEvent(event: SessionEvent, options?: DispatchOptions): void {
+  const isReplay = options?.isReplay ?? false;
+  const p = event.payload;
+
+  // Track eventId if present (always update to highest seen)
+  if (typeof event.eventId === 'number') {
+    const current = useSessionStore.getState().lastSeenEventId;
+    if (event.eventId > current) {
+      useSessionStore.getState().setLastSeenEventId(event.eventId);
+    }
+  }
+
+  const messagesStore = useMessagesStore.getState();
+  const sessionStore = useSessionStore.getState();
+  const approvalStore = useApprovalStore.getState();
+
+  switch (event.eventType) {
+    case EVENT_TYPE.TEXT_CHUNK: {
+      const text = typeof p.text === 'string' ? p.text : '';
+      messagesStore.appendTextChunk(text);
+      break;
+    }
+
+    case EVENT_TYPE.STEP_STARTED: {
+      if (typeof p.stepNumber === 'number') {
+        sessionStore.updateTaskStep(p.stepNumber);
+      }
+      break;
+    }
+
+    case EVENT_TYPE.STEP_COMPLETED: {
+      messagesStore.finishStreaming();
+      break;
+    }
+
+    case EVENT_TYPE.STEP_LIMIT_APPROACHING: {
+      // Warn user that step limit is near (e.g., 80% reached)
+      const current = typeof p.currentStep === 'number' ? p.currentStep : undefined;
+      const max = typeof p.maxSteps === 'number' ? p.maxSteps : undefined;
+      const msg =
+        current !== undefined && max !== undefined
+          ? `Approaching step limit (${String(current)}/${String(max)})`
+          : 'Approaching step limit';
+      messagesStore.addSystemMessage(msg, 'warning');
+      break;
+    }
+
+    case EVENT_TYPE.TOOL_REQUESTED: {
+      const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
+      const toolName = typeof p.toolName === 'string' ? p.toolName : undefined;
+      if (toolCallId && toolName) {
+        const validToolTypes = new Set<ToolCallType>(['tool', 'agent', 'sub_agent', 'skill']);
+        const rawToolType = typeof p.toolType === 'string' ? p.toolType : undefined;
+        const toolType: ToolCallType | undefined =
+          rawToolType && validToolTypes.has(rawToolType as ToolCallType)
+            ? (rawToolType as ToolCallType)
+            : undefined;
+        const toolCall: ToolCallInfo = {
+          id: toolCallId,
+          toolName,
+          toolType,
+          status: 'running',
+          arguments:
+            typeof p.arguments === 'object' && p.arguments !== null
+              ? (p.arguments as Record<string, unknown>)
+              : undefined,
+        };
+        messagesStore.addToolCall(toolCall);
+      }
+      break;
+    }
+
+    case EVENT_TYPE.TOOL_COMPLETED: {
+      const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
+      if (toolCallId) {
+        messagesStore.updateToolCall(toolCallId, {
+          status: p.status === 'failed' ? 'failed' : p.status === 'denied' ? 'denied' : 'completed',
+          result: typeof p.result === 'string' ? p.result : undefined,
+          error: typeof p.error === 'string' ? p.error : undefined,
+        });
+      }
+      break;
+    }
+
+    case EVENT_TYPE.APPROVAL_REQUESTED: {
+      // Skip approval dialogs during replay — if genuinely pending,
+      // the live notification stream will deliver it
+      if (isReplay) break;
+
+      const approval = parseApprovalRequest(p);
+      if (approval) {
+        approvalStore.addApproval(approval);
+      } else {
+        console.error('[SessionEvents] Malformed approval_requested payload:', p);
+        messagesStore.addSystemMessage('Received malformed approval request', 'warning');
+      }
+      break;
+    }
+
+    case EVENT_TYPE.APPROVAL_RESOLVED: {
+      // Confirmation that approval was processed by agent-runtime — informational only
+      break;
+    }
+
+    case EVENT_TYPE.SESSION_COMPLETED: {
+      messagesStore.finishStreaming();
+      sessionStore.setTaskRunning(false);
+      break;
+    }
+
+    case EVENT_TYPE.SESSION_FAILED: {
+      messagesStore.finishStreaming();
+      sessionStore.setTaskRunning(false);
+      const message = typeof p.message === 'string' ? p.message : 'Session failed';
+      sessionStore.setError(message);
+      messagesStore.addSystemMessage(`Error: ${message}`, 'error');
+      break;
+    }
+
+    case EVENT_TYPE.POLICY_EXPIRED: {
+      messagesStore.finishStreaming();
+      sessionStore.setTaskRunning(false);
+      sessionStore.setError('Policy expired. Please start a new session.');
+      messagesStore.addSystemMessage('Policy expired. Please start a new session.', 'error');
+      break;
+    }
+
+    case EVENT_TYPE.TASK_COMPLETED: {
+      messagesStore.finishStreaming();
+      sessionStore.setTaskRunning(false);
+      break;
+    }
+
+    case EVENT_TYPE.TASK_STARTED: {
+      // Informational — task state is already set by useStartTask
+      break;
+    }
+
+    case EVENT_TYPE.TASK_CANCELLED: {
+      messagesStore.finishStreaming();
+      sessionStore.setTaskRunning(false);
+      messagesStore.addSystemMessage('Task cancelled', 'info');
+      break;
+    }
+
+    case EVENT_TYPE.TASK_FAILED: {
+      messagesStore.finishStreaming();
+      sessionStore.setTaskRunning(false);
+      const message = typeof p.message === 'string' ? p.message : 'Task failed';
+      sessionStore.setError(message);
+      messagesStore.addSystemMessage(`Error: ${message}`, 'error');
+      if (p.isRecoverable === true) {
+        const taskPrompt = useSessionStore.getState().taskState?.prompt ?? null;
+        sessionStore.setLastFailedPrompt(taskPrompt);
+      }
+      break;
+    }
+
+    case EVENT_TYPE.LLM_RETRY: {
+      const attempt = typeof p.attempt === 'number' ? p.attempt : 0;
+      const maxRetries = typeof p.maxRetries === 'number' ? p.maxRetries : 0;
+      messagesStore.addSystemMessage(
+        `Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`,
+        'warning',
+      );
+      break;
+    }
+
+    case EVENT_TYPE.PLAN_MODE_CHANGED: {
+      const planMode = p.planMode === true;
+      sessionStore.setPlanMode(planMode);
+      messagesStore.addSystemMessage(
+        planMode ? 'Entered plan mode (read-only)' : 'Exited plan mode',
+        'info',
+      );
+      break;
+    }
+
+    case EVENT_TYPE.VERIFICATION_STARTED: {
+      sessionStore.setVerifying(true);
+      messagesStore.addSystemMessage('Verifying results...', 'info');
+      break;
+    }
+
+    case EVENT_TYPE.VERIFICATION_COMPLETED: {
+      sessionStore.setVerifying(false);
+      const passed = p.passed === true;
+      messagesStore.addSystemMessage(
+        passed ? 'Verification passed' : 'Verification found issues',
+        passed ? 'info' : 'warning',
+      );
+      break;
+    }
+
+    case EVENT_TYPE.PLAN_UPDATED: {
+      const goal = typeof p.goal === 'string' ? p.goal : '';
+      const rawSteps = Array.isArray(p.steps) ? (p.steps as unknown[]) : [];
+      const steps: PlanStepInfo[] = rawSteps
+        .filter((s): s is Record<string, unknown> => typeof s === 'object' && s !== null)
+        .map((s) => ({
+          index: typeof s.index === 'number' ? s.index : 0,
+          description: typeof s.description === 'string' ? s.description : '',
+          status: parsePlanStepStatus(s.status),
+        }));
+      if (goal) {
+        sessionStore.setPlan({ goal, steps });
+      }
+      break;
+    }
+
+    default:
+      // Unknown event type — ignore
+      break;
+  }
+}
+
 /**
  * Hook that listens for session events from the agent runtime
  * and dispatches them to the appropriate Zustand stores.
  */
 export function useSessionEvents(): void {
-  const appendTextChunk = useMessagesStore((s) => s.appendTextChunk);
-  const finishStreaming = useMessagesStore((s) => s.finishStreaming);
-  const addToolCall = useMessagesStore((s) => s.addToolCall);
-  const updateToolCall = useMessagesStore((s) => s.updateToolCall);
-  const addSystemMessage = useMessagesStore((s) => s.addSystemMessage);
-
-  const updateTaskStep = useSessionStore((s) => s.updateTaskStep);
-  const setTaskRunning = useSessionStore((s) => s.setTaskRunning);
-  const setError = useSessionStore((s) => s.setError);
-  const setLastFailedPrompt = useSessionStore((s) => s.setLastFailedPrompt);
-  const setPlanMode = useSessionStore((s) => s.setPlanMode);
-  const setVerifying = useSessionStore((s) => s.setVerifying);
-  const setPlan = useSessionStore((s) => s.setPlan);
-
-  const addApproval = useApprovalStore((s) => s.addApproval);
-
   useEffect(() => {
     const cleanup = window.coworkIPC.onSessionEvent((event: SessionEvent) => {
-      const p = event.payload;
-
-      switch (event.eventType) {
-        case EVENT_TYPE.TEXT_CHUNK: {
-          const text = typeof p.text === 'string' ? p.text : '';
-          appendTextChunk(text);
-          break;
-        }
-
-        case EVENT_TYPE.STEP_STARTED: {
-          if (typeof p.stepNumber === 'number') {
-            updateTaskStep(p.stepNumber);
-          }
-          break;
-        }
-
-        case EVENT_TYPE.STEP_COMPLETED: {
-          finishStreaming();
-          break;
-        }
-
-        case EVENT_TYPE.STEP_LIMIT_APPROACHING: {
-          // Warn user that step limit is near (e.g., 80% reached)
-          const current = typeof p.currentStep === 'number' ? p.currentStep : undefined;
-          const max = typeof p.maxSteps === 'number' ? p.maxSteps : undefined;
-          const msg =
-            current !== undefined && max !== undefined
-              ? `Approaching step limit (${String(current)}/${String(max)})`
-              : 'Approaching step limit';
-          addSystemMessage(msg, 'warning');
-          break;
-        }
-
-        case EVENT_TYPE.TOOL_REQUESTED: {
-          const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
-          const toolName = typeof p.toolName === 'string' ? p.toolName : undefined;
-          if (toolCallId && toolName) {
-            const validToolTypes = new Set<ToolCallType>(['tool', 'agent', 'sub_agent', 'skill']);
-            const rawToolType = typeof p.toolType === 'string' ? p.toolType : undefined;
-            const toolType: ToolCallType | undefined =
-              rawToolType && validToolTypes.has(rawToolType as ToolCallType)
-                ? (rawToolType as ToolCallType)
-                : undefined;
-            const toolCall: ToolCallInfo = {
-              id: toolCallId,
-              toolName,
-              toolType,
-              status: 'running',
-              arguments:
-                typeof p.arguments === 'object' && p.arguments !== null
-                  ? (p.arguments as Record<string, unknown>)
-                  : undefined,
-            };
-            addToolCall(toolCall);
-          }
-          break;
-        }
-
-        case EVENT_TYPE.TOOL_COMPLETED: {
-          const toolCallId = typeof p.toolCallId === 'string' ? p.toolCallId : undefined;
-          if (toolCallId) {
-            updateToolCall(toolCallId, {
-              status:
-                p.status === 'failed' ? 'failed' : p.status === 'denied' ? 'denied' : 'completed',
-              result: typeof p.result === 'string' ? p.result : undefined,
-              error: typeof p.error === 'string' ? p.error : undefined,
-            });
-          }
-          break;
-        }
-
-        case EVENT_TYPE.APPROVAL_REQUESTED: {
-          const approval = parseApprovalRequest(p);
-          if (approval) {
-            addApproval(approval);
-          } else {
-            console.error('[SessionEvents] Malformed approval_requested payload:', p);
-            addSystemMessage('Received malformed approval request', 'warning');
-          }
-          break;
-        }
-
-        case EVENT_TYPE.APPROVAL_RESOLVED: {
-          // Confirmation that approval was processed by agent-runtime — informational only
-          break;
-        }
-
-        case EVENT_TYPE.SESSION_COMPLETED: {
-          finishStreaming();
-          setTaskRunning(false);
-          break;
-        }
-
-        case EVENT_TYPE.SESSION_FAILED: {
-          finishStreaming();
-          setTaskRunning(false);
-          const message = typeof p.message === 'string' ? p.message : 'Session failed';
-          setError(message);
-          addSystemMessage(`Error: ${message}`, 'error');
-          break;
-        }
-
-        case EVENT_TYPE.POLICY_EXPIRED: {
-          finishStreaming();
-          setTaskRunning(false);
-          setError('Policy expired. Please start a new session.');
-          addSystemMessage('Policy expired. Please start a new session.', 'error');
-          break;
-        }
-
-        case EVENT_TYPE.TASK_COMPLETED: {
-          finishStreaming();
-          setTaskRunning(false);
-          break;
-        }
-
-        case EVENT_TYPE.TASK_STARTED: {
-          // Informational — task state is already set by useStartTask
-          break;
-        }
-
-        case EVENT_TYPE.TASK_CANCELLED: {
-          finishStreaming();
-          setTaskRunning(false);
-          addSystemMessage('Task cancelled', 'info');
-          break;
-        }
-
-        case EVENT_TYPE.TASK_FAILED: {
-          finishStreaming();
-          setTaskRunning(false);
-          const message = typeof p.message === 'string' ? p.message : 'Task failed';
-          setError(message);
-          addSystemMessage(`Error: ${message}`, 'error');
-          if (p.isRecoverable === true) {
-            const taskPrompt = useSessionStore.getState().taskState?.prompt ?? null;
-            setLastFailedPrompt(taskPrompt);
-          }
-          break;
-        }
-
-        case EVENT_TYPE.LLM_RETRY: {
-          const attempt = typeof p.attempt === 'number' ? p.attempt : 0;
-          const maxRetries = typeof p.maxRetries === 'number' ? p.maxRetries : 0;
-          addSystemMessage(
-            `Retrying LLM call (attempt ${String(attempt)}/${String(maxRetries)})...`,
-            'warning',
-          );
-          break;
-        }
-
-        case EVENT_TYPE.PLAN_MODE_CHANGED: {
-          const planMode = p.planMode === true;
-          setPlanMode(planMode);
-          addSystemMessage(planMode ? 'Entered plan mode (read-only)' : 'Exited plan mode', 'info');
-          break;
-        }
-
-        case EVENT_TYPE.VERIFICATION_STARTED: {
-          setVerifying(true);
-          addSystemMessage('Verifying results...', 'info');
-          break;
-        }
-
-        case EVENT_TYPE.VERIFICATION_COMPLETED: {
-          setVerifying(false);
-          const passed = p.passed === true;
-          addSystemMessage(
-            passed ? 'Verification passed' : 'Verification found issues',
-            passed ? 'info' : 'warning',
-          );
-          break;
-        }
-
-        case EVENT_TYPE.PLAN_UPDATED: {
-          const goal = typeof p.goal === 'string' ? p.goal : '';
-          const rawSteps = Array.isArray(p.steps) ? (p.steps as unknown[]) : [];
-          const steps: PlanStepInfo[] = rawSteps
-            .filter((s): s is Record<string, unknown> => typeof s === 'object' && s !== null)
-            .map((s) => ({
-              index: typeof s.index === 'number' ? s.index : 0,
-              description: typeof s.description === 'string' ? s.description : '',
-              status: parsePlanStepStatus(s.status),
-            }));
-          if (goal) {
-            setPlan({ goal, steps });
-          }
-          break;
-        }
-
-        default:
-          // Unknown event type — ignore
-          break;
-      }
+      dispatchSessionEvent(event);
     });
 
     return cleanup;
-  }, [
-    appendTextChunk,
-    finishStreaming,
-    addToolCall,
-    updateToolCall,
-    addSystemMessage,
-    updateTaskStep,
-    setTaskRunning,
-    setError,
-    setLastFailedPrompt,
-    setPlanMode,
-    setVerifying,
-    setPlan,
-    addApproval,
-  ]);
+  }, []);
 }

@@ -7,6 +7,7 @@ export const IPC_CHANNELS = {
   SESSION_CREATE: 'session:create',
   SESSION_RESUME: 'session:resume',
   SESSION_GET_STATE: 'session:get-state',
+  SESSION_GET_EVENTS: 'session:get-events',
 
   // Task control
   TASK_START: 'task:start',

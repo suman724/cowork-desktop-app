@@ -9,6 +9,7 @@ import type {
   PatchPreview,
   SessionSummary,
   ConversationMessage,
+  GetEventsResponse,
 } from '../shared/types';
 import type { Workspace } from '@cowork/platform';
 
@@ -29,6 +30,8 @@ export interface CoworkIPC {
   resumeSession: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
 
   getSessionState: (params: { sessionId: string }) => Promise<IpcResponse<SessionState>>;
+
+  getEvents: (params: { sinceId: number }) => Promise<IpcResponse<GetEventsResponse>>;
 
   // Task control
   startTask: (params: {
@@ -107,6 +110,7 @@ const coworkIPC: CoworkIPC = {
   createSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CREATE, params),
   resumeSession: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_RESUME, params),
   getSessionState: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET_STATE, params),
+  getEvents: (params) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET_EVENTS, params),
 
   // Task control
   startTask: (params) => ipcRenderer.invoke(IPC_CHANNELS.TASK_START, params),
