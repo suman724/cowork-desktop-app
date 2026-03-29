@@ -43,6 +43,7 @@ export interface CoworkIPC {
       allowNetwork?: boolean;
       approvalMode?: 'always' | 'on_risky_actions' | 'never';
       planOnly?: boolean;
+      browserEnabled?: boolean;
     };
   }) => Promise<IpcResponse<void>>;
 
@@ -93,6 +94,12 @@ export interface CoworkIPC {
 
   // Folder picker
   selectFolder: () => Promise<IpcResponse<string | null>>;
+
+  // Browser control
+  browserPause: () => Promise<IpcResponse<unknown>>;
+  browserResume: () => Promise<IpcResponse<unknown>>;
+  browserClose: () => Promise<IpcResponse<unknown>>;
+  browserTakeover: () => Promise<IpcResponse<unknown>>;
 
   // App info
   getVersion: () => Promise<IpcResponse<string>>;
@@ -146,6 +153,12 @@ const coworkIPC: CoworkIPC = {
 
   // Folder picker
   selectFolder: () => ipcRenderer.invoke(IPC_CHANNELS.FOLDER_SELECT),
+
+  // Browser
+  browserPause: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_PAUSE),
+  browserResume: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_RESUME),
+  browserClose: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_CLOSE),
+  browserTakeover: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_TAKEOVER),
 
   // App
   getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_VERSION),
