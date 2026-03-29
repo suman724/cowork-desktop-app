@@ -21,9 +21,9 @@ The app follows a strict main/renderer process split with a typed preload bridge
 
 **Renderer process** (`src/renderer/`) — React 19, sandboxed, no Node.js APIs:
 - `App.tsx` — View router, global event hooks, approval modal overlay
-- `state/` — 5 Zustand stores: session (includes `planMode`, `isVerifying`, `plan: PlanInfo | null`), messages (streaming accumulation), approval (FIFO queue), history, ui
+- `state/` — 6 Zustand stores: session (includes `planMode`, `isVerifying`, `plan: PlanInfo | null`), messages (streaming accumulation), approval (FIFO queue), history, ui, browser (page state, takeover status, domain approvals)
 - `hooks/` — 12 hooks: 2 event dispatchers (`useSessionEvents`, `useAgentRuntimeEvents`) + 1 event replay (`useEventReplay`) + 9 IPC wrappers with loading/error state
-- `views/` — 5 view groups: conversation (9 components including MarkdownRenderer and PlanPanel), history (6), approval (2), patch (3), settings (1)
+- `views/` — 5 view groups: conversation (10 components including MarkdownRenderer, PlanPanel, and BrowserPanel), history (6), approval (2), patch (3), settings (1)
 - `components/` — Shared: `ErrorBoundary`, `ThemeProvider`, `AppLayout`, `StatusIndicator` + 17 shadcn/ui primitives in `ui/`
 
 **Shared** (`src/shared/`) — Imported by both processes:
@@ -69,11 +69,22 @@ The app follows a strict main/renderer process split with a typed preload bridge
 | `runtime:status` | AgentRuntimeManager |
 | `runtime:shutdown` | AgentRuntimeManager |
 | `app:get-version` | Electron `app.getVersion()` |
+| `browser:pause` | `browser.pause` JSON-RPC |
+| `browser:resume` | `browser.resume` JSON-RPC |
+| `browser:close` | Browser shutdown |
+| `browser:takeover` | Focus browser window (= pause) |
 
 **Push events** (main → renderer via `webContents.send`):
 - `push:session-event` — `SessionEvent` notifications from agent-runtime
 - `push:runtime-status-changed` — `AgentRuntimeStatus` transitions
 - `push:runtime-crashed` — Unexpected process exit with code/signal
+- `push:browser-started` — Browser instance launched
+- `push:browser-stopped` — Browser instance closed
+- `push:browser-page-state` — Page navigation / DOM state update
+- `push:browser-auth-required` — Page requires authentication (user takeover needed)
+- `push:browser-takeover-started` — User took over browser control
+- `push:browser-takeover-ended` — User returned browser control to agent
+- `push:browser-domain-approved` — User approved a new domain
 
 ## Two External Communication Paths
 
@@ -129,12 +140,13 @@ cowork-desktop-app/
       App.tsx                # View router, event hooks, approval overlay
       preload.d.ts           # window.coworkIPC type declaration
       lib/utils.ts           # cn() utility (shadcn)
-      state/                 # 5 Zustand stores
+      state/                 # 6 Zustand stores
         session-store.ts     # Session, task state, runtime status, plan progress, lastSeenEventId
         messages-store.ts    # Messages, streaming accumulation, tool cards
         approval-store.ts    # FIFO approval queue
         history-store.ts     # Workspaces, sessions, loading flags
         ui-store.ts          # Current view, theme, settings
+        browser-store.ts     # Browser page state, takeover status, domain approvals
       hooks/                 # 11 custom React hooks
         use-session-events.ts       # Dispatches SessionEvent → stores (exports dispatchSessionEvent)
         use-event-replay.ts         # Replays missed events on view return (GetEvents + gap fallback)

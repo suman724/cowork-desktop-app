@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ConversationHeader } from './ConversationHeader';
 import { PlanPanel } from './PlanPanel';
+import { BrowserPanel } from './BrowserPanel';
 import { ConversationFooter } from './ConversationFooter';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
@@ -35,7 +36,7 @@ export function ConversationView(): React.JSX.Element {
   }, [lastFailedPrompt, startTask]);
 
   const handleSubmit = useCallback(
-    (prompt: string, options?: { planOnly?: boolean }) => {
+    (prompt: string, options?: { planOnly?: boolean; browserEnabled?: boolean }) => {
       void startTask(prompt, options);
     },
     [startTask],
@@ -77,40 +78,43 @@ export function ConversationView(): React.JSX.Element {
   const showContinueButton = isViewingHistory && !taskState;
 
   return (
-    <div className="flex h-full flex-col">
-      <ConversationHeader />
-      <PlanPanel />
-      <MessageList />
-      <ConversationFooter
-        onCancel={handleCancel}
-        onRetry={handleRetry}
-        canRetry={lastFailedPrompt !== null}
-      />
-      {incompleteTask && !isTaskRunning && (
-        <ResumeTaskBanner
-          incompleteTask={incompleteTask}
-          onResume={() => void resumeTask(incompleteTask)}
-          onDismiss={() => clearIncompleteTask(null)}
+    <div className="flex h-full">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <ConversationHeader />
+        <PlanPanel />
+        <MessageList />
+        <ConversationFooter
+          onCancel={handleCancel}
+          onRetry={handleRetry}
+          canRetry={lastFailedPrompt !== null}
         />
-      )}
-      {showContinueButton ? (
-        <div className="border-t px-6 py-3">
-          <Button
-            onClick={handleContinue}
-            disabled={isContinuing}
-            className="w-full"
-            data-testid="continue-conversation-button"
-          >
-            {isContinuing ? 'Starting...' : 'Continue Conversation'}
-          </Button>
-        </div>
-      ) : (
-        <PromptInput
-          onSubmit={handleSubmit}
-          disabled={isTaskRunning}
-          placeholder="Type a message..."
-        />
-      )}
+        {incompleteTask && !isTaskRunning && (
+          <ResumeTaskBanner
+            incompleteTask={incompleteTask}
+            onResume={() => void resumeTask(incompleteTask)}
+            onDismiss={() => clearIncompleteTask(null)}
+          />
+        )}
+        {showContinueButton ? (
+          <div className="border-t px-6 py-3">
+            <Button
+              onClick={handleContinue}
+              disabled={isContinuing}
+              className="w-full"
+              data-testid="continue-conversation-button"
+            >
+              {isContinuing ? 'Starting...' : 'Continue Conversation'}
+            </Button>
+          </div>
+        ) : (
+          <PromptInput
+            onSubmit={handleSubmit}
+            disabled={isTaskRunning}
+            placeholder="Type a message..."
+          />
+        )}
+      </div>
+      <BrowserPanel />
     </div>
   );
 }

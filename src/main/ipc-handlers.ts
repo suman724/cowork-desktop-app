@@ -378,6 +378,52 @@ export function registerIpcHandlers(
     }
   });
 
+  // --- Browser control ---
+  ipcMain.handle(IPC_CHANNELS.BROWSER_PAUSE, async () => {
+    try {
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime not running');
+      const result = await client.request('browser.pause', {});
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BROWSER_RESUME, async () => {
+    try {
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime not running');
+      const result = await client.request('browser.resume', {});
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BROWSER_CLOSE, async () => {
+    try {
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime not running');
+      const result = await client.request('Shutdown', {});
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.BROWSER_TAKEOVER, async () => {
+    // Takeover just pauses the agent — the browser window is already visible
+    try {
+      const client = runtime.getClient();
+      if (!client) return failure('RUNTIME_NOT_AVAILABLE', 'Agent runtime not running');
+      const result = await client.request('browser.pause', {});
+      return success(result);
+    } catch (err) {
+      return rpcError(err);
+    }
+  });
+
   // --- App ---
   ipcMain.handle(IPC_CHANNELS.APP_GET_VERSION, () => {
     return success(app.getVersion());

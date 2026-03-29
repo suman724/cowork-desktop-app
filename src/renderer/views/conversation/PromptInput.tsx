@@ -1,10 +1,11 @@
 import { useState, useCallback, type KeyboardEvent } from 'react';
-import { SendHorizontal, ListChecks } from 'lucide-react';
+import { SendHorizontal, ListChecks, Globe } from 'lucide-react';
 import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
+import { useBrowserStore } from '../../state/browser-store';
 
 interface PromptInputProps {
-  onSubmit: (prompt: string, options?: { planOnly?: boolean }) => void;
+  onSubmit: (prompt: string, options?: { planOnly?: boolean; browserEnabled?: boolean }) => void;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -16,13 +17,19 @@ export function PromptInput({
 }: PromptInputProps): React.JSX.Element {
   const [value, setValue] = useState('');
   const [planOnly, setPlanOnly] = useState(false);
+  const browserEnabled = useBrowserStore((s) => s.browserEnabled);
+  const browserAvailable = useBrowserStore((s) => s.browserAvailable);
+  const setBrowserEnabled = useBrowserStore((s) => s.setBrowserEnabled);
 
   const handleSubmit = useCallback(() => {
     const trimmed = value.trim();
     if (trimmed.length === 0 || disabled) return;
-    onSubmit(trimmed, planOnly ? { planOnly: true } : undefined);
+    const options: { planOnly?: boolean; browserEnabled?: boolean } = {};
+    if (planOnly) options.planOnly = true;
+    if (browserEnabled) options.browserEnabled = true;
+    onSubmit(trimmed, Object.keys(options).length > 0 ? options : undefined);
     setValue('');
-  }, [value, disabled, onSubmit, planOnly]);
+  }, [value, disabled, onSubmit, planOnly, browserEnabled]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -49,6 +56,28 @@ export function PromptInput({
           data-testid="prompt-input"
         />
         <div className="flex flex-col justify-end gap-1">
+          <Button
+            type="button"
+            variant={browserEnabled ? 'default' : 'ghost'}
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              setBrowserEnabled(!browserEnabled);
+            }}
+            disabled={disabled || !browserAvailable}
+            aria-label="Enable browser"
+            aria-pressed={browserEnabled}
+            title={
+              !browserAvailable
+                ? 'Browser not available in this session'
+                : browserEnabled
+                  ? 'Browser enabled'
+                  : 'Enable browser'
+            }
+            data-testid="browser-toggle"
+          >
+            <Globe className="h-4 w-4" />
+          </Button>
           <Button
             type="button"
             variant={planOnly ? 'default' : 'ghost'}
