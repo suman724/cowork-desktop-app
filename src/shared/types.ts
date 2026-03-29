@@ -105,7 +105,7 @@ export interface ToolCallInfo {
 export interface PlanStepInfo {
   index: number;
   description: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'skipped';
+  status: 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
 }
 
 /** Agent plan state for display */
@@ -154,6 +154,15 @@ export interface SessionSummary {
 export interface ListSessionsResponse {
   sessions: SessionSummary[];
   nextToken?: string;
+}
+
+/** Browser automation state for the side panel */
+export type BrowserStatus = 'idle' | 'launching' | 'active' | 'suspended' | 'takeover';
+
+/** Browser page state event payload */
+export interface BrowserPageState {
+  url: string;
+  screenshotBase64: string;
 }
 
 export type { ApprovalRequest, ConversationMessage, Workspace };

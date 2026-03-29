@@ -41,6 +41,12 @@ export const IPC_CHANNELS = {
   // Folder picker
   FOLDER_SELECT: 'folder:select',
 
+  // Browser control
+  BROWSER_PAUSE: 'browser:pause',
+  BROWSER_RESUME: 'browser:resume',
+  BROWSER_CLOSE: 'browser:close',
+  BROWSER_TAKEOVER: 'browser:takeover',
+
   // App lifecycle
   APP_GET_VERSION: 'app:get-version',
 } as const;

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { SessionEvent, ToolCallInfo, ToolCallType, PlanStepInfo } from '../../shared/types';
 import type { ApprovalRequest } from '../../shared/types';
+import { useBrowserStore } from '../state/browser-store';
 import { useMessagesStore } from '../state/messages-store';
 import { useSessionStore } from '../state/session-store';
 import { useApprovalStore } from '../state/approval-store';
@@ -30,9 +31,24 @@ export const EVENT_TYPE = {
   VERIFICATION_STARTED: 'verification_started',
   VERIFICATION_COMPLETED: 'verification_completed',
   PLAN_UPDATED: 'plan_updated',
+  TOOL_OUTPUT_CHUNK: 'tool_output_chunk',
+  // Browser events
+  BROWSER_STARTED: 'browser_started',
+  BROWSER_STOPPED: 'browser_stopped',
+  BROWSER_PAGE_STATE: 'browser_page_state',
+  BROWSER_AUTH_REQUIRED: 'browser_auth_required',
+  BROWSER_TAKEOVER_STARTED: 'browser_takeover_started',
+  BROWSER_TAKEOVER_ENDED: 'browser_takeover_ended',
+  BROWSER_DOMAIN_APPROVED: 'browser_domain_approved',
 } as const;
 
-const VALID_PLAN_STEP_STATUSES = new Set(['pending', 'in_progress', 'completed', 'skipped']);
+const VALID_PLAN_STEP_STATUSES = new Set([
+  'pending',
+  'in_progress',
+  'completed',
+  'skipped',
+  'failed',
+]);
 
 function parsePlanStepStatus(value: unknown): PlanStepInfo['status'] {
   if (typeof value === 'string' && VALID_PLAN_STEP_STATUSES.has(value)) {
@@ -297,6 +313,73 @@ export function dispatchSessionEvent(event: SessionEvent, options?: DispatchOpti
         }));
       if (goal) {
         sessionStore.setPlan({ goal, steps });
+      }
+      break;
+    }
+
+    // --- Browser events ---
+
+    case EVENT_TYPE.TOOL_OUTPUT_CHUNK: {
+      // Streaming tool output — append to current tool card or show inline
+      const content = typeof p.content === 'string' ? p.content : '';
+      const toolName = typeof p.toolName === 'string' ? p.toolName : '';
+      if (content && toolName) {
+        messagesStore.appendTextChunk(content);
+      }
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_STARTED: {
+      const browserStore = useBrowserStore.getState();
+      browserStore.setBrowserStatus('active');
+      browserStore.setPanelOpen(true);
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_STOPPED: {
+      const browserStore = useBrowserStore.getState();
+      browserStore.setBrowserStatus('idle');
+      browserStore.updatePageState({ url: '', screenshotBase64: '' });
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_PAGE_STATE: {
+      const url = typeof p.url === 'string' ? p.url : '';
+      const screenshotBase64 = typeof p.screenshotBase64 === 'string' ? p.screenshotBase64 : '';
+      if (url || screenshotBase64) {
+        const browserStore = useBrowserStore.getState();
+        browserStore.updatePageState({ url, screenshotBase64 });
+      }
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_AUTH_REQUIRED: {
+      // Show auth notification — user needs to log in via takeover
+      const domain = typeof p.domain === 'string' ? p.domain : '';
+      if (domain) {
+        const browserStore = useBrowserStore.getState();
+        browserStore.setBrowserStatus('takeover');
+      }
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_TAKEOVER_STARTED: {
+      const browserStore = useBrowserStore.getState();
+      browserStore.setBrowserStatus('takeover');
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_TAKEOVER_ENDED: {
+      const browserStore = useBrowserStore.getState();
+      browserStore.setBrowserStatus('active');
+      break;
+    }
+
+    case EVENT_TYPE.BROWSER_DOMAIN_APPROVED: {
+      const domain = typeof p.domain === 'string' ? p.domain : '';
+      if (domain) {
+        const browserStore = useBrowserStore.getState();
+        browserStore.addApprovedDomain(domain);
       }
       break;
     }
